@@ -19,6 +19,21 @@
   } catch (e) { /* sem armazenamento: o carrinho vive só nesta página */ }
   var persist = function () { try { localStorage.setItem(KEY, JSON.stringify({ items: cart, vehicle: vehicle })); } catch (e) { /* ignora */ } };
 
+  /* ---------- Cadastro do cliente (opcional) ----------
+     Não há servidor: o cadastro fica neste aparelho e segue junto nas mensagens de WhatsApp. */
+  var PKEY = 'mf_profile_v1';
+  var profile = null;
+  try { profile = JSON.parse(localStorage.getItem(PKEY) || 'null'); } catch (e) { /* sem armazenamento */ }
+  if (profile && !profile.name) profile = null;
+
+  function customerBlock() {
+    if (!profile) return '';
+    var lines = ['Nome: ' + profile.name, 'WhatsApp: ' + profile.phone];
+    if (profile.email) lines.push('E-mail: ' + profile.email);
+    if (profile.cep || profile.city) lines.push('Entrega: ' + [profile.city, profile.cep && 'CEP ' + profile.cep].filter(Boolean).join(' — '));
+    return '\n\nMeus dados:\n' + lines.join('\n');
+  }
+
   var drawer = $('[data-cart-drawer]');
   var backdrop = $('.drawer-backdrop');
   var itemsEl = $('[data-cart-items]');
@@ -32,7 +47,8 @@
     });
     return 'Olá! Quero fechar este pedido na ' + CFG.name + ':\n\n' + lines.join('\n') +
       (total ? '\n\nTotal das peças: ' + brl(total) : '') +
-      '\n\nMeu veículo: ' + (vehicle || '(informar modelo, ano e motor)');
+      '\n\nMeu veículo: ' + (vehicle || (profile && profile.vehicle) || '(informar modelo, ano e motor)') +
+      customerBlock();
   }
 
   function renderCart() {
@@ -131,6 +147,108 @@
     vehicleEl.addEventListener('input', function () { vehicle = vehicleEl.value.trim(); persist(); renderCart(); });
   }
   renderCart();
+
+  var modal = $('[data-acct-modal]');
+  var modalBackdrop = $('.modal-backdrop');
+  var form = $('[data-acct-form]');
+  var done = $('[data-acct-done]');
+  var errEl = $('[data-acct-error]');
+  var digits = function (s) { return String(s || '').replace(/\D/g, ''); };
+  var maskPhone = function (s) {
+    var d = digits(s).slice(0, 11);
+    if (d.length < 3) return d;
+    if (d.length < 7) return '(' + d.slice(0, 2) + ') ' + d.slice(2);
+    var cut = d.length === 11 ? 7 : 6;
+    return '(' + d.slice(0, 2) + ') ' + d.slice(2, cut) + '-' + d.slice(cut);
+  };
+  var maskCep = function (s) { var d = digits(s).slice(0, 8); return d.length > 5 ? d.slice(0, 5) + '-' + d.slice(5) : d; };
+
+  function renderAccount() {
+    var first = profile ? profile.name.split(' ')[0] : '';
+    $$('[data-acct-label]').forEach(function (el) { el.textContent = profile ? 'Olá, ' + first : 'Cadastre-se'; });
+    var slot = $('[data-cart-acct]');
+    if (slot) {
+      slot.innerHTML = profile
+        ? '<span>Pedido em nome de <strong>' + escapeHtml(profile.name) + '</strong></span><button type="button" data-acct-open>Editar</button>'
+        : '<span>Quer agilizar? O cadastro é opcional.</span><button type="button" data-acct-open>Cadastrar</button>';
+    }
+    if (vehicleEl && !vehicle && profile && profile.vehicle) { vehicle = profile.vehicle; vehicleEl.value = vehicle; persist(); }
+    renderCart();
+  }
+
+  function openAccount(open) {
+    if (!modal) return;
+    modal.hidden = !open;
+    modalBackdrop.hidden = !open;
+    document.documentElement.classList.toggle('no-scroll', open || (drawer && !drawer.hidden));
+    if (!open) return;
+    form.hidden = false;
+    done.hidden = true;
+    errEl.hidden = true;
+    var p = profile || {};
+    form.elements.name.value = p.name || '';
+    form.elements.phone.value = p.phone || '';
+    form.elements.email.value = p.email || '';
+    form.elements.cep.value = p.cep || '';
+    form.elements.city.value = p.city || '';
+    form.elements.vehicle.value = p.vehicle || vehicle || '';
+    form.elements.offers.checked = Boolean(p.offers);
+    $('[data-acct-title]').textContent = profile ? 'Seu cadastro' : 'Cadastre-se';
+    $('[data-acct-intro]').hidden = Boolean(profile);
+    $('[data-acct-remove]').hidden = !profile;
+    form.elements.name.focus();
+  }
+
+  if (form) {
+    form.elements.phone.addEventListener('input', function () { this.value = maskPhone(this.value); });
+    form.elements.cep.addEventListener('input', function () { this.value = maskCep(this.value); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var f = form.elements;
+      var name = f.name.value.trim().replace(/\s+/g, ' ');
+      var phone = digits(f.phone.value);
+      var email = f.email.value.trim();
+      var problem = '';
+      if (name.length < 3) problem = 'Informe seu nome completo.';
+      else if (phone.length < 10 || phone.length > 11) problem = 'Informe o WhatsApp com DDD (10 ou 11 dígitos).';
+      else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problem = 'Confira o e-mail informado.';
+      if (problem) { errEl.textContent = problem; errEl.hidden = false; return; }
+      var isNew = !profile;
+      profile = { name: name, phone: maskPhone(phone), email: email, cep: maskCep(f.cep.value), city: f.city.value.trim(), vehicle: f.vehicle.value.trim(), offers: f.offers.checked };
+      try { localStorage.setItem(PKEY, JSON.stringify(profile)); } catch (err) { /* vale só nesta página */ }
+      if (profile.vehicle) { vehicle = profile.vehicle; if (vehicleEl) vehicleEl.value = vehicle; persist(); }
+      renderAccount();
+      if (!isNew) { openAccount(false); return; }
+      var text = 'Olá! Fiz meu cadastro no site da ' + CFG.name + '.' + customerBlock() +
+        (profile.vehicle ? '\nVeículo: ' + profile.vehicle : '') +
+        '\nReceber ofertas pelo WhatsApp: ' + (profile.offers ? 'sim' : 'não');
+      $('[data-acct-send]').href = 'https://wa.me/' + CFG.wa + '?text=' + encodeURIComponent(text);
+      form.hidden = true;
+      done.hidden = false;
+      $('[data-acct-title]').textContent = 'Seu cadastro';
+    });
+    $('[data-acct-remove]').addEventListener('click', function () {
+      profile = null;
+      try { localStorage.removeItem(PKEY); } catch (err) { /* ignora */ }
+      renderAccount();
+      openAccount(false);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-acct-open]')) { openAccount(true); return; }
+    if (e.target.closest('[data-acct-close]')) { openAccount(false); return; }
+    // Links diretos de compra/dúvida: completa a mensagem com o veículo e os dados de quem tem cadastro.
+    var link = e.target.closest('a[href^="https://wa.me/"]');
+    if (link && profile && !link.hasAttribute('data-cart-checkout') && !link.hasAttribute('data-acct-send') && !link.hasAttribute('data-wa-done')) {
+      var parts = link.href.split('?text=');
+      var text = decodeURIComponent(parts[1] || '');
+      if (/veículo é: $/.test(text) && profile.vehicle) text += profile.vehicle;
+      link.href = parts[0] + '?text=' + encodeURIComponent(text + customerBlock());
+      link.setAttribute('data-wa-done', '');
+    }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') openAccount(false); });
+  renderAccount();
 
   /* ---------- Galeria do produto ---------- */
   // As fotos ficam lado a lado num trilho com scroll-snap: no celular o cliente arrasta,

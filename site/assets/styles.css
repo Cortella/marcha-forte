@@ -432,3 +432,48 @@ code { font: 600 13.5px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; ba
   .buybar .btn-primary { display: none; }
   .group { flex-basis: 120px; }
 }
+
+/* Cadastro do cliente (opcional) */
+.acct-btn { display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 0; color: #fff; font: 600 14px var(--body); cursor: pointer; padding: 8px; border-radius: 8px; white-space: nowrap; max-width: 170px; }
+.acct-btn span { overflow: hidden; text-overflow: ellipsis; }
+.acct-btn:hover { background: var(--asphalt-2); }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10, 12, 14, .6); z-index: 50; }
+.modal { position: fixed; z-index: 51; top: 50%; left: 50%; translate: -50% -50%; width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; background: var(--bg); border-radius: 14px; box-shadow: 0 30px 80px rgba(0, 0, 0, .4); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--ink); color: #fff; position: sticky; top: 0; z-index: 1; }
+.modal-head h2 { font-size: 26px; font-weight: 700; text-transform: uppercase; }
+.modal-head button { background: transparent; border: 0; color: #fff; cursor: pointer; padding: 4px; display: grid; }
+.acct-form, .acct-done { padding: 18px; display: grid; gap: 12px; }
+.acct-form label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--steel); min-width: 0; }
+.acct-form small { font-weight: 400; }
+.acct-form input[type="text"], .acct-form input[type="tel"], .acct-form input[type="email"] { font: 500 16px var(--body); padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); width: 100%; min-width: 0; }
+.acct-form input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(255, 183, 3, .45); }
+.acct-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.acct-form .acct-check { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 500; color: var(--ink); cursor: pointer; }
+.acct-check input { width: 20px; height: 20px; accent-color: var(--ink); flex-shrink: 0; }
+.acct-intro { margin: 0; color: #3a424c; }
+.acct-error { margin: 0; background: #fde8e6; color: var(--danger); font-weight: 600; font-size: 14px; padding: 10px 12px; border-radius: 8px; }
+.acct-privacy { margin: 0; font-size: 12.5px; color: var(--steel); }
+.acct-remove { background: transparent; border: 0; color: var(--danger); font: 600 13.5px var(--body); text-decoration: underline; cursor: pointer; padding: 6px; justify-self: center; }
+.acct-done p { margin: 0; }
+.acct-done-title { display: flex; align-items: center; gap: 8px; font: 700 26px/1.1 var(--display); text-transform: uppercase; }
+.acct-done-title svg { color: var(--wa); width: 26px; height: 26px; }
+.drawer-acct { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; color: var(--steel); background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+.drawer-acct strong { color: var(--ink); }
+.drawer-acct button { background: transparent; border: 0; color: var(--ink); font: 700 13.5px var(--body); text-decoration: underline; cursor: pointer; padding: 4px; white-space: nowrap; }
+.signup { background: var(--asphalt); color: #fff; padding-block: 40px; }
+.signup-in { display: flex; align-items: center; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; }
+.signup h2 { font-size: clamp(28px, 3.6vw, 40px); font-weight: 700; text-transform: uppercase; margin-bottom: 14px; }
+.signup ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; color: #dfe4e9; }
+.signup li { display: flex; gap: 9px; align-items: flex-start; }
+.signup li svg { color: var(--yellow); flex-shrink: 0; margin-top: 3px; }
+.signup-cta { display: grid; gap: 10px; justify-items: start; max-width: 300px; }
+.signup-cta span { font-size: 13.5px; color: #aab2bb; }
+@media (max-width: 720px) {
+  .acct-btn { padding: 6px; }
+  .acct-btn span { display: none; }
+  .modal { top: auto; bottom: 0; left: 0; translate: none; width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; }
+  .acct-form, .acct-done { padding: 14px 14px calc(16px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
+  .signup { padding-block: 28px; }
+  .signup-cta { max-width: none; width: 100%; }
+  .signup-cta .btn { width: 100%; }
+}

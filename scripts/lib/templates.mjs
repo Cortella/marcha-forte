@@ -12,6 +12,7 @@ const ICON = {
   cart: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.600 12.400a1 1 0 0 0 1 .8h9.300a1 1 0 0 0 1-.8L20.500 7H6"/></svg>',
   search: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.500-3.500"/></svg>',
   check: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.500 4.500 4.500L19 7.500"/></svg>',
+  user: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.600-6.500 8-6.500s8 2.500 8 6.500"/></svg>',
   close: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
 };
 
@@ -54,6 +55,7 @@ ${head}
     <button type="submit" aria-label="Buscar">${ICON.search}</button>
   </form>
   <a class="hlink hide-sm" href="${esc(waUrl(cfg, helpText))}" target="_blank" rel="noopener">${ICON.wa}<span>Fale com a gente</span></a>
+  <button class="acct-btn" type="button" data-acct-open aria-label="Cadastro do cliente">${ICON.user}<span data-acct-label>Cadastre-se</span></button>
   <button class="cart-btn" type="button" data-cart-open aria-label="Abrir carrinho">${ICON.cart}<span class="cart-count" data-cart-count hidden>0</span></button>
 </div></header>
 ${body}
@@ -87,6 +89,7 @@ ${body}
   <div class="drawer-head"><h2>Seu carrinho</h2><button type="button" data-cart-close aria-label="Fechar carrinho">${ICON.close}</button></div>
   <div class="drawer-items" data-cart-items></div>
   <div class="drawer-foot">
+    <div class="drawer-acct" data-cart-acct></div>
     <label class="vehicle-field">Seu veículo <small>(modelo, ano e motor — ou placa/chassi)</small>
       <input type="text" data-cart-vehicle placeholder="Ex.: Palio 1.0 Fire 2012" autocomplete="off">
     </label>
@@ -95,6 +98,32 @@ ${body}
     <p class="drawer-note">Você não paga nada agora. A gente confirma a compatibilidade, o frete e a forma de pagamento na conversa.</p>
   </div>
 </aside>
+<div class="modal-backdrop" data-acct-close hidden></div>
+<div class="modal" data-acct-modal role="dialog" aria-modal="true" aria-labelledby="acct-title" hidden>
+  <div class="modal-head"><h2 id="acct-title" data-acct-title>Cadastre-se</h2><button type="button" data-acct-close aria-label="Fechar">${ICON.close}</button></div>
+  <form class="acct-form" data-acct-form novalidate>
+    <p class="acct-intro" data-acct-intro>É opcional e leva 30 segundos. Seus pedidos pelo WhatsApp já saem com seus dados e o seu veículo preenchidos.</p>
+    <label>Nome completo<input type="text" name="name" autocomplete="name" required></label>
+    <label>WhatsApp com DDD<input type="tel" name="phone" autocomplete="tel-national" inputmode="numeric" placeholder="(11) 99999-9999" required></label>
+    <label>E-mail <small>(opcional)</small><input type="email" name="email" autocomplete="email"></label>
+    <div class="acct-row">
+      <label>CEP <small>(opcional)</small><input type="text" name="cep" autocomplete="postal-code" inputmode="numeric" placeholder="00000-000"></label>
+      <label>Cidade / UF <small>(opcional)</small><input type="text" name="city" autocomplete="address-level2" placeholder="São Paulo / SP"></label>
+    </div>
+    <label>Seu veículo <small>(modelo, ano e motor)</small><input type="text" name="vehicle" autocomplete="off" placeholder="Ex.: Palio 1.0 Fire 2012"></label>
+    <label class="acct-check"><input type="checkbox" name="offers"> Quero receber ofertas da ${esc(cfg.name)} pelo WhatsApp</label>
+    <p class="acct-error" data-acct-error role="alert" hidden></p>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">Salvar cadastro</button>
+    <p class="acct-privacy">Seus dados ficam guardados apenas neste aparelho e só chegam à ${esc(cfg.name)} quando você envia um pedido ou o cadastro pelo WhatsApp. Você pode apagar quando quiser.</p>
+    <button class="acct-remove" type="button" data-acct-remove hidden>Apagar meu cadastro deste aparelho</button>
+  </form>
+  <div class="acct-done" data-acct-done hidden>
+    <p class="acct-done-title">${ICON.check} Cadastro salvo!</p>
+    <p>A partir de agora seus pedidos já saem com seus dados. Quer avisar a loja para agilizar o primeiro atendimento?</p>
+    <a class="btn btn-wa btn-block" data-acct-send href="#" target="_blank" rel="noopener">${ICON.wa} Enviar meu cadastro para a loja</a>
+    <button class="btn btn-ghost btn-block" type="button" data-acct-close>Continuar comprando</button>
+  </div>
+</div>
 <script>window.MF_CFG=${JSON.stringify({ wa: cfg.whatsapp, name: cfg.name, base })};</script>
 ${scripts}
 <script src="${base}assets/app.js" defer></script>
@@ -201,6 +230,22 @@ export function homePage({ cfg, products, brandOptions, groupCounts, typeCounts,
     <a class="btn btn-wa" href="${esc(waUrl(cfg, help))}" target="_blank" rel="noopener">${ICON.wa} Pedir ajuda no WhatsApp</a>
   </div>
   <div class="more"><button class="btn btn-dark" type="button" data-more hidden>Mostrar mais peças</button></div>
+</div></section>
+
+<section class="signup" id="cadastro"><div class="wrap signup-in">
+  <div>
+    <p class="eyebrow">Opcional</p>
+    <h2>Cadastre-se e peça mais rápido</h2>
+    <ul>
+      <li>${ICON.check} Seus dados e o seu veículo já vão preenchidos em cada pedido</li>
+      <li>${ICON.check} O atendimento confirma a compatibilidade sem precisar perguntar tudo de novo</li>
+      <li>${ICON.check} Você escolhe se quer receber ofertas pelo WhatsApp</li>
+    </ul>
+  </div>
+  <div class="signup-cta">
+    <button class="btn btn-primary btn-lg" type="button" data-acct-open>Fazer meu cadastro</button>
+    <span>Prefere não se cadastrar? Sem problema: é só comprar normalmente.</span>
+  </div>
 </div></section>
 
 <section class="steps" id="como-comprar"><div class="wrap">
