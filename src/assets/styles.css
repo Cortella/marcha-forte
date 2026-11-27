@@ -477,3 +477,11 @@ code { font: 600 13.5px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; ba
   .signup-cta { max-width: none; width: 100%; }
   .signup-cta .btn { width: 100%; }
 }
+
+/* "Fale conosco" à esquerda da logo; no celular fica só o ícone */
+.header .hlink { flex-shrink: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #3a424c; }
+.header .hlink:hover { border-color: var(--yellow); }
+@media (max-width: 720px) {
+  .header .hlink { padding: 7px; }
+  .header .hlink span { display: none; }
+}
