@@ -51,12 +51,12 @@ ${head}
   <span class="hide-sm">${ICON.check} Atendimento direto no WhatsApp</span>
 </div></div>
 <header class="header"><div class="wrap header-in">
-  <a class="hlink" href="${esc(waUrl(cfg, helpText))}" target="_blank" rel="noopener" aria-label="Fale conosco pelo WhatsApp">${ICON.wa}<span>Fale conosco</span></a>
   ${logo(base)}
   <form class="hsearch" action="${base}index.html" method="get" role="search">
     <input type="search" name="q" placeholder="Busque por peça, veículo ou código (ex.: coxim Palio, 55564395)" aria-label="Buscar peças">
     <button type="submit" aria-label="Buscar">${ICON.search}</button>
   </form>
+  <a class="hlink hide-sm" href="${esc(waUrl(cfg, helpText))}" target="_blank" rel="noopener">${ICON.wa}<span>Fale conosco</span></a>
   <button class="acct-btn" type="button" data-acct-open aria-label="Cadastro do cliente">${ICON.user}<span data-acct-label>Cadastre-se</span></button>
   <button class="cart-btn" type="button" data-cart-open aria-label="Abrir carrinho">${ICON.cart}<span class="cart-count" data-cart-count hidden>0</span></button>
 </div></header>
@@ -391,7 +391,7 @@ export function productPage({ cfg, p, related }) {
         <p>${esc(p.type.what)}</p>
         <h3>Dica de instalação</h3>
         <p>${esc(p.type.tip)}</p>
-        <a class="btn btn-dark btn-block" href="${esc(waUrl(cfg, askText))}" target="_blank" rel="noopener">${ICON.wa} Tirar dúvida técnica</a>
+        <a class="btn btn-wa btn-block" href="${esc(waUrl(cfg, askText))}" target="_blank" rel="noopener">${ICON.wa} Tirar dúvida técnica</a>
       </div>
     </aside>
   </div>

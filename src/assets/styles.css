@@ -280,8 +280,7 @@ code { font: 600 13.5px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; ba
 .guide { background: var(--asphalt); color: #dfe4e9; border-radius: 14px; padding: 24px; }
 .guide h2 { color: #fff; font-size: 26px; font-weight: 700; margin-bottom: 10px; }
 .guide h3 { color: var(--yellow); font-size: 19px; font-weight: 700; text-transform: uppercase; margin: 16px 0 6px; }
-.guide .btn { margin-top: 18px; background: var(--yellow); color: var(--ink); }
-.guide .btn:hover { background: var(--yellow-deep); }
+.guide .btn { margin-top: 18px; }
 .related { margin-top: 40px; }
 .related .section-title { margin-bottom: 18px; }
 .buybar { display: none; }
@@ -478,10 +477,5 @@ code { font: 600 13.5px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; ba
   .signup-cta .btn { width: 100%; }
 }
 
-/* "Fale conosco" à esquerda da logo; no celular fica só o ícone */
-.header .hlink { flex-shrink: 0; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #3a424c; }
-.header .hlink:hover { border-color: var(--yellow); }
-@media (max-width: 720px) {
-  .header .hlink { padding: 7px; }
-  .header .hlink span { display: none; }
-}
+/* O ícone do WhatsApp é sempre verde: verde da marca sobre fundo escuro, branco sobre botão verde. */
+.hlink svg { color: #25d366; width: 22px; height: 22px; }
