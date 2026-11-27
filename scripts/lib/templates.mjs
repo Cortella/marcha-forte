@@ -234,7 +234,7 @@ export function homePage({ cfg, products, brandOptions, groupCounts, typeCounts,
   <div class="empty" data-empty hidden>
     <h3>Nenhuma peça encontrada com esses filtros</h3>
     <p>Isso não quer dizer que a gente não tenha. Mande o modelo, o ano e o motor do veículo que procuramos para você.</p>
-    <a class="btn btn-wa" href="${esc(waUrl(cfg, help))}" target="_blank" rel="noopener">${ICON.wa} Pedir ajuda no WhatsApp</a>
+    <a class="btn btn-wa" href="${esc(waUrl(cfg, help))}" target="_blank" rel="noopener" data-consult>${ICON.wa} Faça uma consulta</a>
   </div>
   <div class="more"><button class="btn btn-dark" type="button" data-more hidden>Mostrar mais peças</button></div>
 </div></section>

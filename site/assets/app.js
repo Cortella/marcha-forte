@@ -458,6 +458,17 @@
     var n = match.length;
     el.count.textContent = n === 1 ? '1 peça encontrada' : n + ' peças' + (n === items.length ? '' : ' encontradas');
     el.empty.hidden = n > 0;
+    // A consulta já leva o que a pessoa procurou, para o atendimento não ter de perguntar de novo.
+    var consult = $('[data-consult]', el.empty);
+    if (consult && !n) {
+      var looked = [];
+      if (state.q) looked.push('"' + state.q + '"');
+      if (state.brand) looked.push(el.brand.options[el.brand.selectedIndex].text + (state.model ? ' ' + state.model : ''));
+      if (state.type) looked.push(el.type.options[el.type.selectedIndex].text.replace(/\s*\(\d+\)$/, ''));
+      consult.href = 'https://wa.me/' + CFG.wa + '?text=' + encodeURIComponent('Olá! Quero fazer uma consulta na ' + CFG.name + '.' +
+        (looked.length ? '\nProcurei no site por: ' + looked.join(' · ') + ' e não encontrei.' : '') + '\n\nMeu veículo é: ');
+      consult.removeAttribute('data-wa-done');
+    }
     el.more.hidden = n <= state.shown;
     if (!el.more.hidden) el.more.textContent = 'Mostrar mais peças (' + (n - state.shown) + ' restantes)';
     el.clear.hidden = !(state.q || state.brand || state.model || state.type);
