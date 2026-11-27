@@ -74,6 +74,7 @@ ${body}
       <li><a href="${esc(waUrl(cfg, helpText))}" target="_blank" rel="noopener">WhatsApp</a></li>
       ${cfg.instagram ? `<li><a href="https://instagram.com/${esc(cfg.instagram)}" target="_blank" rel="noopener">Instagram @${esc(cfg.instagram)}</a></li>` : ''}
       <li><a href="${base}index.html#como-comprar">Como comprar</a></li>
+      <li><a href="${base}admin/index.html" rel="nofollow">Área do administrador</a></li>
       <li><a href="${base}index.html#duvidas">Dúvidas frequentes</a></li>
     </ul>
     ${cfg.cityLine ? `<p>${esc(cfg.cityLine)}</p>` : ''}

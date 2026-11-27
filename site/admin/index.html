@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Marcha Forte</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="adm">
+
+<header class="adm-top">
+  <a class="logo" href="../index.html" aria-label="Voltar para a loja">
+    <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#FFB703"/><path d="M11 10v20M20 10v20M29 10v20M11 20h18" stroke="#111418" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="29" cy="10" r="4.6" fill="#111418"/></svg>
+    <span class="logo-text">MARCHA<b>FORTE</b></span>
+  </a>
+  <span class="adm-tag">Admin</span>
+  <span class="adm-user" data-user hidden></span>
+  <button class="btn btn-ghost adm-out" type="button" data-logout hidden>Sair</button>
+</header>
+
+<!-- Login -->
+<main class="adm-login" data-view-login>
+  <form class="adm-card" data-login-form>
+    <h1>Área do administrador</h1>
+    <p>Somente quem tem permissão de escrita no repositório da loja consegue entrar e publicar alterações. O acesso é feito com um <strong>token do GitHub</strong>.</p>
+    <label>Token de acesso do GitHub
+      <input type="password" name="token" autocomplete="off" spellcheck="false" placeholder="github_pat_…" required>
+    </label>
+    <label class="adm-check"><input type="checkbox" name="remember"> Manter conectado neste aparelho</label>
+    <p class="adm-error" data-login-error role="alert" hidden></p>
+    <button class="btn btn-primary btn-lg btn-block" type="submit">Entrar</button>
+    <details class="adm-help">
+      <summary>Como criar o token</summary>
+      <ol>
+        <li>No GitHub, abra <em>Settings → Developer settings → Personal access tokens → Fine-grained tokens</em> e clique em <em>Generate new token</em>.</li>
+        <li>Em <em>Repository access</em>, escolha <em>Only select repositories</em> e selecione <code data-repo-name></code>.</li>
+        <li>Em <em>Permissions → Repository permissions</em>, marque <em>Contents: Read and write</em>.</li>
+        <li>Gere o token, copie e cole no campo acima.</li>
+      </ol>
+      <p>O token fica guardado apenas neste navegador e é enviado somente ao GitHub.</p>
+    </details>
+  </form>
+</main>
+
+<!-- Produtos -->
+<main class="adm-main" data-view-app hidden>
+  <div class="adm-bar">
+    <h1>Produtos</h1>
+    <label class="f-search"><input type="search" data-search placeholder="Buscar por nome ou referência" aria-label="Buscar produto"></label>
+    <select data-filter aria-label="Filtrar">
+      <option value="">Todos</option>
+      <option value="edited">Só os editados</option>
+      <option value="pending">Alterações não publicadas</option>
+      <option value="hidden">Ocultos do site</option>
+    </select>
+    <span class="adm-count" data-count></span>
+  </div>
+  <div class="adm-list" data-list></div>
+  <div class="more"><button class="btn btn-dark" type="button" data-more hidden>Mostrar mais</button></div>
+</main>
+
+<div class="adm-publish" data-publish-bar hidden>
+  <span data-publish-text></span>
+  <button class="btn btn-ghost" type="button" data-discard>Descartar</button>
+  <button class="btn btn-primary" type="button" data-publish>Publicar alterações</button>
+</div>
+<div class="adm-toast" data-toast role="status" hidden></div>
+
+<!-- Editor -->
+<div class="modal-backdrop" data-edit-close hidden></div>
+<div class="modal adm-editor" data-editor role="dialog" aria-modal="true" aria-labelledby="ed-title" hidden>
+  <div class="modal-head"><h2 id="ed-title">Editar produto</h2><button type="button" data-edit-close aria-label="Fechar">✕</button></div>
+  <form class="acct-form" data-edit-form>
+    <p class="adm-ref" data-ed-ref></p>
+    <label>Nome do produto
+      <input type="text" name="title" maxlength="160" required>
+      <button class="adm-reset" type="button" data-reset="title">Voltar ao nome automático</button>
+    </label>
+    <label>Preço de venda (R$)
+      <input type="text" name="price" inputmode="decimal" placeholder="0,00">
+      <small data-ed-price-hint></small>
+      <button class="adm-reset" type="button" data-reset="price">Voltar ao preço automático</button>
+    </label>
+    <label>Descrição
+      <textarea name="description" rows="14" spellcheck="true"></textarea>
+      <small>Uma linha terminada em dois-pontos vira título de seção: <em>Aplicação:</em>, <em>Especificações técnicas:</em>, <em>Benefícios:</em>, <em>Conteúdo da embalagem:</em>, <em>Instalação:</em>, <em>Informações importantes:</em>. Linhas no formato <em>Material: borracha</em> dentro de Especificações entram na ficha técnica.</small>
+      <button class="adm-reset" type="button" data-reset="description">Voltar à descrição do fornecedor</button>
+    </label>
+    <label class="acct-check"><input type="checkbox" name="hidden"> Ocultar este produto do site</label>
+    <p class="adm-error" data-ed-error role="alert" hidden></p>
+    <div class="adm-actions">
+      <a class="btn btn-ghost" data-ed-view href="#" target="_blank" rel="noopener">Ver no site</a>
+      <button class="btn btn-primary" type="submit">Guardar alteração</button>
+    </div>
+    <p class="acct-privacy">A alteração fica pendente até você clicar em “Publicar alterações”.</p>
+  </form>
+</div>
+
+<script src="data.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

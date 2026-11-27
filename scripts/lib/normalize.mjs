@@ -130,30 +130,42 @@ const sentence = (s) => {
 };
 const stripBullet = (l) => l.replace(/^[\s\-–—•*·●▪►✔✅➤>]+/, '').replace(/^\d{1,2}[-.)]\s+/, '').trim();
 
-export function parseDescription(raw) {
+const MARKETPLACE_FIXES = (raw) => String(raw ?? '')
+  .replace(/\r/g, '')
+  .replace(/(pelas|nas|pelo campo de|no campo de|utilize o campo de) perguntas( abaixo| ao vendedor)?/gi, 'pelo nosso WhatsApp')
+  .replace(/antes de clicar em comprar/gi, 'antes de comprar');
+
+// Texto do fornecedor já sem as linhas de marketplace: é o ponto de partida mostrado no painel de admin.
+export function cleanDescriptionText(raw) {
+  return MARKETPLACE_FIXES(raw).split('\n')
+    .map((l) => l.replace(/^["“”\s]+|["“”\s]+$/g, '').replace(/[ \t]+/g, ' '))
+    .filter((l) => !/^[=\-_*#~.]{3,}$/.test(l) && !DROP.test(l))
+    .join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// `trusted`: texto escrito pelo administrador — nada é descartado e "Garantia" vira informação importante.
+export function parseDescription(raw, { trusted = false } = {}) {
+  const fix = (h) => (trusted && h === 'warranty' ? 'notes' : h);
   const sections = { intro: [], compat: [], specs: [], benefits: [], contents: [], install: [], symptoms: [], notes: [], codes: [] };
   const specs = [];
   let cur = 'intro';
-  const text = String(raw ?? '')
-    .replace(/\r/g, '')
-    .replace(/(pelas|nas|pelo campo de|no campo de|utilize o campo de) perguntas( abaixo| ao vendedor)?/gi, 'pelo nosso WhatsApp')
-    .replace(/antes de clicar em comprar/gi, 'antes de comprar');
+  const text = trusted ? String(raw ?? '').replace(/\r/g, '') : MARKETPLACE_FIXES(raw);
 
   for (let line of text.split('\n')) {
     line = line.replace(/^["“”\s]+|["“”\s]+$/g, '').replace(/\s+/g, ' ');
     if (!line || /^[=\-_*#~.]{3,}$/.test(line)) continue;
-    if (DROP.test(line)) continue;
+    if (!trusted && DROP.test(line)) continue;
     const body = stripBullet(line);
     if (!body) continue;
 
     // Título de seção sozinho na linha ("COMPATIBILIDADE", "Aplicações:")
-    const solo = classifyHeading(body.replace(/[:：]+$/, '')) ?? classifyLoose(body);
+    const solo = fix(classifyHeading(body.replace(/[:：]+$/, '')) ?? classifyLoose(body));
     if (solo) { cur = solo; continue; }
 
     // "Chave: valor"
     const kv = body.match(/^([\p{L}0-9ºª°/. ()]{2,42}?)\s*[:：]\s*(.+)$/u);
     if (kv) {
-      const head = classifyHeading(kv[1]);
+      const head = fix(classifyHeading(kv[1]));
       const value = kv[2].trim();
       // Dentro da ficha técnica, "Aplicação: suporte do motor" é uma linha da ficha, não uma nova seção.
       const staysInSpecs = cur === 'specs' && head !== 'notes' && head !== 'warranty' && value.length < 80;

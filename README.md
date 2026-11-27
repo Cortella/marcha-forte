@@ -24,6 +24,20 @@ Para ver localmente, abra `site/index.html` ou rode `npx serve site`.
 | `siteUrl` | Domínio final (ex.: `https://marchaforte.com.br`). Gera sitemap, robots e links canônicos. |
 | `instagram`, `cityLine` | Opcionais, aparecem no rodapé. |
 
+## Painel de admin — `/admin/`
+
+Edita nome, preço e descrição de cada produto (e permite ocultar um produto) sem mexer em código.
+
+- **Acesso:** só entra quem tem um token do GitHub com permissão de escrita neste repositório
+  (fine-grained token → *Only select repositories* → este repositório → *Contents: Read and write*).
+  Quem autoriza é o GitHub; a página não tem senha própria.
+- **Como salva:** "Publicar alterações" grava `data/overrides.json` no repositório. O push dispara o
+  deploy e o site atualiza em 1–2 minutos.
+- **Formato:** `{ "<id do produto>": { "title", "price", "description", "hidden" } }`. Só ficam gravados
+  os campos alterados; o resto continua automático (nome limpo, custo × markup, descrição do fornecedor).
+- Um preço definido no admin fica fixo mesmo se o custo do fornecedor mudar.
+- `adminRepo` em `site.config.json` aponta o repositório usado pelo painel.
+
 ## Onde mexer
 
 - `scripts/lib/knowledge.mjs` — tipos de peça (texto "para que serve", sintomas, dica), montadoras e modelos.

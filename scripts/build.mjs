@@ -4,7 +4,7 @@ import { readFile, writeFile, mkdir, rm, cp, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { GROUPS, TYPES, BRANDS } from './lib/knowledge.mjs';
-import { norm, cleanTitle, detectType, detectVehicles, parseDescription, extractCodes, gtinOf, retailPrice } from './lib/normalize.mjs';
+import { norm, cleanTitle, detectType, detectVehicles, parseDescription, cleanDescriptionText, extractCodes, gtinOf, retailPrice } from './lib/normalize.mjs';
 import { homePage, productPage } from './lib/templates.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,17 +28,24 @@ function leadFor(type, brands, models) {
   return `${type.singular}${target}. Confira abaixo a aplicação, os códigos de referência e as especificações — e confirme a compatibilidade com o seu veículo pelo WhatsApp antes de comprar.`;
 }
 
-const products = raw.products
-  .filter((p) => p.active && !p.hidden)
+// Edições feitas no painel de admin (site/admin): { "<id do produto>": { title?, price?, description?, hidden? } }
+const overrides = await readFile(path.join(root, 'data', 'overrides.json'), 'utf8').then(JSON.parse, () => ({}));
+const costOf = (p) => (p.on_sale && p.sale_price ? p.sale_price : p.price);
+const available = raw.products.filter((p) => p.active && !p.hidden);
+
+const products = available
+  .filter((p) => !overrides[p.id]?.hidden)
   .map((p) => {
-    const title = cleanTitle(p.name);
+    const ov = overrides[p.id] ?? {};
+    const hasDesc = typeof ov.description === 'string' && ov.description.trim() !== '';
+    const title = (typeof ov.title === 'string' && ov.title.trim()) || cleanTitle(p.name);
     const type = detectType(p.name);
-    const { brands, models } = detectVehicles(p.name, p.description);
-    const parsed = parseDescription(p.description);
+    const { brands, models } = detectVehicles(p.name, hasDesc ? ov.description : p.description);
+    const parsed = hasDesc ? parseDescription(ov.description, { trusted: true }) : parseDescription(p.description);
     // Descarta introdução que só repete o título.
     parsed.intro = parsed.intro.filter((t) => norm(t).replace(/\W/g, '') !== norm(p.name).replace(/\W/g, ''));
     const codes = extractCodes(p, parsed);
-    const price = retailPrice(p.on_sale && p.sale_price ? p.sale_price : p.price, cfg);
+    const price = Number(ov.price) > 0 ? Math.round(Number(ov.price) * 100) / 100 : retailPrice(costOf(p), cfg);
     const inStock = Boolean(p.available_to_purchase);
     const lead = leadFor(type, brands, models);
     const images = (p.images ?? []).slice().sort((a, b) => a.order - b.order).map((i) => ({ url: i.url, thumb: i.thumb || i.url }));
@@ -87,6 +94,17 @@ for (const entry of await readdir(out)) await rm(path.join(out, entry), { recurs
 await mkdir(path.join(out, 'produto'), { recursive: true });
 await cp(path.join(root, 'src', 'assets'), path.join(out, 'assets'), { recursive: true });
 
+// Painel de admin: página estática + os valores automáticos de cada produto (base para as edições).
+await cp(path.join(root, 'src', 'admin'), path.join(out, 'admin'), { recursive: true });
+const adminData = {
+  repo: cfg.adminRepo ?? '', branch: cfg.adminBranch ?? 'main', path: 'data/overrides.json', name: cfg.name,
+  products: available.map((p) => ({
+    id: p.id, sku: String(p.sku ?? p.id), slug: p.slug, title: cleanTitle(p.name), price: retailPrice(costOf(p), cfg),
+    description: cleanDescriptionText(p.description), thumb: p.images?.[0]?.thumb ?? '', inStock: Boolean(p.available_to_purchase),
+  })),
+};
+await writeFile(path.join(out, 'admin', 'data.js'), `window.MF_ADMIN=${JSON.stringify(adminData)};`);
+
 // Foto de capa de cada sistema: a peça indicada em GROUPS[].cover (referência do fornecedor)
 // ou, na falta dela, a primeira peça disponível do tipo mais comum do grupo.
 const groupImages = {};
@@ -115,7 +133,7 @@ await writeFile(path.join(out, 'assets', 'catalog.js'), `window.MF_CATALOG=${JSO
 if (cfg.siteUrl) {
   const urls = [`${cfg.siteUrl}/`, ...products.map((p) => `${cfg.siteUrl}/produto/${p.slug}.html`)];
   await writeFile(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${u}</loc></url>`).join('\n')}\n</urlset>\n`);
-  await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${cfg.siteUrl}/sitemap.xml\n`);
+  await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${cfg.siteUrl}/sitemap.xml\n`);
 }
 
 console.log(`OK: ${products.length} produtos (${products.filter((p) => !p.inStock).length} sob consulta), ${brandOptions.length} montadoras → site/`);

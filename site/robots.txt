@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
 Sitemap: https://cortella.github.io/marcha-forte/sitemap.xml
