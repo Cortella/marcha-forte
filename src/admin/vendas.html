@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Vendas — Admin Marcha Forte</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="adm">
+
+<header class="adm-top">
+  <a class="logo" href="../index.html" aria-label="Voltar para a loja">
+    <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#FFB703"/><path d="M11 10v20M20 10v20M29 10v20M11 20h18" stroke="#111418" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="29" cy="10" r="4.6" fill="#111418"/></svg>
+    <span class="logo-text">MARCHA<b>FORTE</b></span>
+  </a>
+  <span class="adm-tag">Admin</span>
+  <nav class="adm-nav"><a class="is-on" href="vendas.html">Vendas</a><a href="index.html">Produtos</a></nav>
+  <span class="adm-user" data-user hidden></span>
+  <button class="btn btn-ghost adm-out" type="button" data-logout hidden>Sair</button>
+</header>
+
+<!-- Banco ainda não configurado -->
+<main class="adm-login" data-view-setup hidden>
+  <div class="adm-card">
+    <h1>Banco de vendas não configurado</h1>
+    <p>A dashboard lê os pedidos de um banco Postgres no Supabase. Para ativar:</p>
+    <ol class="adm-steps">
+      <li>Crie um projeto gratuito em <strong>supabase.com</strong>.</li>
+      <li>No <em>SQL Editor</em>, rode o arquivo <code>db/schema.sql</code> do repositório.</li>
+      <li>Em <em>Authentication → Users</em>, crie o usuário administrador e libere-o com o comando que está no fim do <code>schema.sql</code>.</li>
+      <li>Em <em>Project Settings → API</em>, copie a <em>Project URL</em> e a chave <em>anon public</em> para <code>supabaseUrl</code> e <code>supabaseAnonKey</code> em <code>site.config.json</code>.</li>
+    </ol>
+    <p>Depois do próximo deploy o site passa a registrar os pedidos e esta página pede o login.</p>
+  </div>
+</main>
+
+<!-- Login -->
+<main class="adm-login" data-view-login hidden>
+  <form class="adm-card" data-login-form>
+    <h1>Vendas</h1>
+    <p>Entre com o e-mail e a senha do usuário administrador criado no Supabase.</p>
+    <label>E-mail<input type="email" name="email" autocomplete="username" required></label>
+    <label>Senha<input type="password" name="password" autocomplete="current-password" required></label>
+    <p class="adm-error" data-login-error role="alert" hidden></p>
+    <button class="btn btn-primary btn-lg btn-block" type="submit">Entrar</button>
+  </form>
+</main>
+
+<!-- Dashboard -->
+<main class="adm-main" data-view-app hidden>
+  <div class="dash-head">
+    <h1>Vendas</h1>
+    <select data-period aria-label="Período">
+      <option value="7">Últimos 7 dias</option>
+      <option value="30" selected>Últimos 30 dias</option>
+      <option value="90">Últimos 90 dias</option>
+      <option value="365">Últimos 12 meses</option>
+    </select>
+    <button class="btn btn-ghost" type="button" data-refresh>Atualizar</button>
+    <button class="btn btn-ghost" type="button" data-export>Exportar CSV</button>
+  </div>
+
+  <section class="kpis" data-kpis aria-label="Indicadores do período"></section>
+
+  <section class="dash-grid">
+    <div class="panel">
+      <h2>Faturamento confirmado por dia</h2>
+      <p class="panel-sub">Pedidos marcados como pago, enviado ou concluído, pela data em que chegaram.</p>
+      <div class="chart" data-chart></div>
+    </div>
+    <div class="panel">
+      <h2>Pedidos por situação</h2>
+      <p class="panel-sub">Todos os pedidos recebidos no período.</p>
+      <div class="status-bars" data-status-bars></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Produtos mais pedidos</h2>
+    <p class="panel-sub">Soma dos pedidos do período, sem os cancelados.</p>
+    <div class="table-wrap"><table class="dash-table" data-top></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Pedidos</h2>
+      <select data-status-filter aria-label="Filtrar por situação"><option value="">Todas as situações</option></select>
+    </div>
+    <div class="orders" data-orders></div>
+  </section>
+
+  <section class="panel">
+    <h2>Clientes cadastrados</h2>
+    <p class="panel-sub">Cadastros feitos no site no período.</p>
+    <div class="table-wrap"><table class="dash-table" data-customers></table></div>
+  </section>
+</main>
+
+<div class="chart-tip" data-tip hidden></div>
+<div class="adm-toast" data-toast role="status" hidden></div>
+
+<script src="data.js"></script>
+<script src="vendas.js"></script>
+</body>
+</html>

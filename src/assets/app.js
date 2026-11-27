@@ -34,6 +34,41 @@
     return '\n\nMeus dados:\n' + lines.join('\n');
   }
 
+  /* ---------- Banco de vendas (opcional) ----------
+     Com o Supabase configurado, cada pedido enviado pelo WhatsApp também é gravado para a
+     dashboard do admin. O visitante só consegue inserir; ler é restrito aos administradores.
+     Falha de rede aqui nunca pode atrapalhar a compra: os erros são engolidos de propósito. */
+  function dbInsert(table, row) {
+    if (!CFG.db) return;
+    try {
+      fetch(CFG.db.url.replace(/\/+$/, '') + '/rest/v1/' + table, {
+        method: 'POST',
+        keepalive: true,
+        headers: { apikey: CFG.db.key, Authorization: 'Bearer ' + CFG.db.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(row),
+      }).catch(function () { /* a compra segue pelo WhatsApp */ });
+    } catch (e) { /* idem */ }
+  }
+  var lastOrderKey = '';
+  try { lastOrderKey = sessionStorage.getItem('mf_last_order') || ''; } catch (e) { /* ignora */ }
+  function recordOrder(source, list) {
+    if (!CFG.db || !list.length) return;
+    var items = list.map(function (i) { return { id: i.id, sku: i.sku, title: i.t, qty: i.q, price: i.p || 0 }; });
+    var total = items.reduce(function (n, i) { return n + i.price * i.qty; }, 0);
+    // Clicar duas vezes no mesmo pedido não deve gerar dois registros.
+    var key = source + '|' + items.map(function (i) { return i.id + 'x' + i.qty; }).join(',');
+    if (key === lastOrderKey) return;
+    lastOrderKey = key;
+    try { sessionStorage.setItem('mf_last_order', key); } catch (e) { /* ignora */ }
+    var p = profile || {};
+    dbInsert('orders', {
+      source: source, items: items, total: Math.round(total * 100) / 100,
+      customer_name: p.name || null, customer_phone: p.phone || null, customer_email: p.email || null,
+      customer_city: p.city || null, customer_cep: p.cep || null,
+      vehicle: (source === 'carrinho' ? vehicle : '') || p.vehicle || null,
+    });
+  }
+
   var drawer = $('[data-cart-drawer]');
   var backdrop = $('.drawer-backdrop');
   var itemsEl = $('[data-cart-items]');
@@ -127,6 +162,7 @@
     if (t.closest('[data-cart-close]')) { openCart(false); return; }
     var co = t.closest('[data-cart-checkout]');
     if (co && !cart.length) { e.preventDefault(); return; }
+    if (co) { recordOrder('carrinho', cart); return; }
     var row = t.closest('[data-ci]');
     if (row) {
       var id = Number(row.getAttribute('data-ci'));
@@ -216,6 +252,7 @@
       var isNew = !profile;
       profile = { name: name, phone: maskPhone(phone), email: email, cep: maskCep(f.cep.value), city: f.city.value.trim(), vehicle: f.vehicle.value.trim(), offers: f.offers.checked };
       try { localStorage.setItem(PKEY, JSON.stringify(profile)); } catch (err) { /* vale só nesta página */ }
+      dbInsert('customers', { name: profile.name, phone: profile.phone, email: profile.email || null, city: profile.city || null, cep: profile.cep || null, vehicle: profile.vehicle || null, accepts_offers: profile.offers });
       if (profile.vehicle) { vehicle = profile.vehicle; if (vehicleEl) vehicleEl.value = vehicle; persist(); }
       renderAccount();
       if (!isNew) { openAccount(false); return; }
@@ -238,6 +275,8 @@
     if (e.target.closest('[data-acct-open]')) { openAccount(true); return; }
     if (e.target.closest('[data-acct-close]')) { openAccount(false); return; }
     // Links diretos de compra/dúvida: completa a mensagem com o veículo e os dados de quem tem cadastro.
+    var buy = e.target.closest('a[data-buy]');
+    if (buy) { var one = JSON.parse(buy.getAttribute('data-buy')); one.q = 1; recordOrder('produto', [one]); }
     var link = e.target.closest('a[href^="https://wa.me/"]');
     if (link && profile && !link.hasAttribute('data-cart-checkout') && !link.hasAttribute('data-acct-send') && !link.hasAttribute('data-wa-done')) {
       var parts = link.href.split('?text=');

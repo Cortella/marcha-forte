@@ -38,6 +38,24 @@ Edita nome, preço e descrição de cada produto (e permite ocultar um produto) 
 - Um preço definido no admin fica fixo mesmo se o custo do fornecedor mudar.
 - `adminRepo` em `site.config.json` aponta o repositório usado pelo painel.
 
+## Banco de vendas e dashboard — `/admin/vendas.html`
+
+Postgres no Supabase. Com ele configurado, o site grava cada pedido enviado pelo WhatsApp (carrinho ou
+compra direta) e cada cadastro de cliente; a dashboard mostra indicadores, faturamento por dia, pedidos
+por situação, produtos mais pedidos, a lista de pedidos (com mudança de situação e observação) e os
+clientes cadastrados, com exportação em CSV.
+
+1. Crie um projeto em supabase.com e rode `db/schema.sql` no *SQL Editor*.
+2. Em *Authentication → Users*, crie o usuário administrador; depois rode o `insert into public.admins …`
+   que está no fim do `schema.sql`. Desative o cadastro público em *Authentication → Sign In / Providers*.
+3. Copie *Project URL* e a chave *anon public* para `supabaseUrl` e `supabaseAnonKey` em `site.config.json`.
+
+A chave *anon* é pública por natureza: as regras do banco (RLS) só deixam o visitante **inserir** pedido
+e cadastro; ler e alterar exige um usuário listado em `admins`. Nunca coloque a chave `service_role` aqui.
+
+Um pedido registrado é uma intenção de compra (o cliente clicou para enviar no WhatsApp). Ele vira venda
+quando o administrador muda a situação para *pago*, *enviado* ou *concluído*.
+
 ## Onde mexer
 
 - `scripts/lib/knowledge.mjs` — tipos de peça (texto "para que serve", sintomas, dica), montadoras e modelos.

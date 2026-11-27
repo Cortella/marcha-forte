@@ -98,6 +98,7 @@ await cp(path.join(root, 'src', 'assets'), path.join(out, 'assets'), { recursive
 await cp(path.join(root, 'src', 'admin'), path.join(out, 'admin'), { recursive: true });
 const adminData = {
   repo: cfg.adminRepo ?? '', branch: cfg.adminBranch ?? 'main', path: 'data/overrides.json', name: cfg.name,
+  db: cfg.supabaseUrl && cfg.supabaseAnonKey ? { url: cfg.supabaseUrl.replace(/\/+$/, ''), key: cfg.supabaseAnonKey } : null,
   products: available.map((p) => ({
     id: p.id, sku: String(p.sku ?? p.id), slug: p.slug, title: cleanTitle(p.name), price: retailPrice(costOf(p), cfg),
     description: cleanDescriptionText(p.description), thumb: p.images?.[0]?.thumb ?? '', inStock: Boolean(p.available_to_purchase),

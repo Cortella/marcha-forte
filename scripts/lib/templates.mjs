@@ -5,7 +5,9 @@ export const esc = (s) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 export const brl = (v) => `R$ ${v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 const attrJson = (o) => esc(JSON.stringify(o));
-export const waUrl = (cfg, text) => `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(text)}`;
+// Banco de vendas (Supabase) configurado? Sem ele o site funciona igual, só não registra pedidos.
+export const hasDb = (cfg) => Boolean(cfg.supabaseUrl && cfg.supabaseAnonKey);
+export const waUrl =(cfg, text) => `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(text)}`;
 
 const ICON = {
   wa: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.200 8.200 0 0 1-4.200-1.150l-.3-.180-3 .8.8-2.900-.2-.3A8.200 8.200 0 1 1 12 20.200Zm4.500-6.100c-.250-.130-1.470-.720-1.700-.800-.230-.090-.400-.130-.560.120-.170.250-.640.800-.790.970-.140.160-.290.180-.540.060a6.700 6.700 0 0 1-3.360-2.940c-.250-.440.250-.400.720-1.350.080-.160.040-.300-.020-.430-.060-.120-.560-1.350-.770-1.850-.200-.480-.400-.420-.560-.430h-.480a.920.920 0 0 0-.660.310c-.230.250-.870.850-.870 2.070s.890 2.400 1.010 2.570c.130.160 1.750 2.670 4.240 3.740 1.580.680 2.200.740 2.990.620.480-.070 1.470-.600 1.680-1.180.200-.580.200-1.080.140-1.180-.060-.110-.220-.170-.470-.300Z"/></svg>',
@@ -96,7 +98,7 @@ ${body}
     </label>
     <div class="drawer-total"><span>Total das peças</span><strong data-cart-total>R$ 0,00</strong></div>
     <a class="btn btn-wa btn-block" data-cart-checkout href="#" target="_blank" rel="noopener">${ICON.wa} Finalizar pedido no WhatsApp</a>
-    <p class="drawer-note">Você não paga nada agora. A gente confirma a compatibilidade, o frete e a forma de pagamento na conversa.</p>
+    <p class="drawer-note">Você não paga nada agora. A gente confirma a compatibilidade, o frete e a forma de pagamento na conversa.${hasDb(cfg) ? ' Ao finalizar, o pedido também fica registrado na loja.' : ''}</p>
   </div>
 </aside>
 <div class="modal-backdrop" data-acct-close hidden></div>
@@ -115,7 +117,9 @@ ${body}
     <label class="acct-check"><input type="checkbox" name="offers"> Quero receber ofertas da ${esc(cfg.name)} pelo WhatsApp</label>
     <p class="acct-error" data-acct-error role="alert" hidden></p>
     <button class="btn btn-primary btn-block btn-lg" type="submit">Salvar cadastro</button>
-    <p class="acct-privacy">Seus dados ficam guardados apenas neste aparelho e só chegam à ${esc(cfg.name)} quando você envia um pedido ou o cadastro pelo WhatsApp. Você pode apagar quando quiser.</p>
+    <p class="acct-privacy">${hasDb(cfg)
+    ? `Ao salvar, seu cadastro é enviado à ${esc(cfg.name)} e usado apenas para atender seus pedidos${''} e, se você marcar a opção acima, para enviar ofertas. Para pedir a exclusão, fale com a gente pelo WhatsApp.`
+    : `Seus dados ficam guardados apenas neste aparelho e só chegam à ${esc(cfg.name)} quando você envia um pedido ou o cadastro pelo WhatsApp. Você pode apagar quando quiser.`}</p>
     <button class="acct-remove" type="button" data-acct-remove hidden>Apagar meu cadastro deste aparelho</button>
   </form>
   <div class="acct-done" data-acct-done hidden>
@@ -125,7 +129,7 @@ ${body}
     <button class="btn btn-ghost btn-block" type="button" data-acct-close>Continuar comprando</button>
   </div>
 </div>
-<script>window.MF_CFG=${JSON.stringify({ wa: cfg.whatsapp, name: cfg.name, base })};</script>
+<script>window.MF_CFG=${JSON.stringify({ wa: cfg.whatsapp, name: cfg.name, base, db: hasDb(cfg) ? { url: cfg.supabaseUrl, key: cfg.supabaseAnonKey } : null })};</script>
 ${scripts}
 <script src="${base}assets/app.js" defer></script>
 </body>
@@ -350,7 +354,7 @@ export function productPage({ cfg, p, related }) {
         <div class="buy-price">${priced ? `<strong class="price price-lg">${brl(p.price)}</strong>` : '<strong class="price price-lg price-ask">Consulte o preço</strong>'}
           ${p.inStock ? (p.low ? '<span class="stock stock-low">Poucas unidades disponíveis</span>' : '<span class="stock stock-ok">Disponível</span>') : '<span class="stock stock-out">Sob consulta</span>'}
         </div>
-        ${p.inStock ? `<a class="btn btn-wa btn-lg btn-block" href="${esc(waUrl(cfg, buyText))}" target="_blank" rel="noopener">${ICON.wa} Comprar pelo WhatsApp</a>
+        ${p.inStock ? `<a class="btn btn-wa btn-lg btn-block" href="${esc(waUrl(cfg, buyText))}" data-buy="${addData(p, base)}" target="_blank" rel="noopener">${ICON.wa} Comprar pelo WhatsApp</a>
         <button class="btn btn-primary btn-block" type="button" data-add="${addData(p, base)}">Adicionar ao carrinho</button>`
     : `<a class="btn btn-wa btn-lg btn-block" href="${esc(waUrl(cfg, notifyText))}" target="_blank" rel="noopener">${ICON.wa} Consultar disponibilidade</a>`}
         <a class="buy-ask" href="${esc(waUrl(cfg, askText))}" target="_blank" rel="noopener">Não tem certeza se serve? <u>Confirme a compatibilidade grátis</u></a>
@@ -394,7 +398,7 @@ export function productPage({ cfg, p, related }) {
 
   ${related.length ? `<section class="related"><h2 class="section-title">Peças relacionadas</h2><div class="grid">${related.map((r) => card(r, cfg, base)).join('\n')}</div></section>` : ''}
 </main>
-${p.inStock ? `<div class="buybar"><div><strong>${priced ? brl(p.price) : 'Consulte'}</strong><span>${p.low ? 'Poucas unidades' : 'Disponível'}</span></div><button class="btn btn-primary" type="button" data-add="${addData(p, base)}" aria-label="Adicionar ao carrinho">+ Carrinho</button><a class="btn btn-wa" href="${esc(waUrl(cfg, buyText))}" target="_blank" rel="noopener">${ICON.wa} Comprar</a></div>` : ''}`;
+${p.inStock ? `<div class="buybar"><div><strong>${priced ? brl(p.price) : 'Consulte'}</strong><span>${p.low ? 'Poucas unidades' : 'Disponível'}</span></div><button class="btn btn-primary" type="button" data-add="${addData(p, base)}" aria-label="Adicionar ao carrinho">+ Carrinho</button><a class="btn btn-wa" href="${esc(waUrl(cfg, buyText))}" data-buy="${addData(p, base)}" target="_blank" rel="noopener">${ICON.wa} Comprar</a></div>` : ''}`;
 
   return shell({
     cfg, base,

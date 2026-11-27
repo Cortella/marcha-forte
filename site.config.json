@@ -4,6 +4,8 @@
   "whatsapp": "",
   "siteUrl": "https://cortella.github.io/marcha-forte",
   "adminRepo": "Cortella/marcha-forte",
+  "supabaseUrl": "",
+  "supabaseAnonKey": "",
   "markup": 1.8,
   "showPrices": true,
   "warrantyDays": 90,
