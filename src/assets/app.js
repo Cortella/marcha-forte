@@ -51,22 +51,42 @@
   }
   var lastOrderKey = '';
   try { lastOrderKey = sessionStorage.getItem('mf_last_order') || ''; } catch (e) { /* ignora */ }
+  var OKEY = 'mf_orders_v1';
+  var lastOrderId = '';
+  try { lastOrderId = sessionStorage.getItem('mf_last_order_id') || ''; } catch (e) { /* ignora */ }
+  var orderCode = function (id) { return '#' + String(id).slice(0, 8).toUpperCase(); };
+  function newId() {
+    try { return crypto.randomUUID(); } catch (e) { /* navegador antigo */ }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3) | 8).toString(16);
+    });
+  }
+  // Guarda o pedido no aparelho (histórico da área do cliente) e, com banco configurado, na loja.
+  // Devolve o id do pedido — o mesmo número aparece na mensagem de WhatsApp e na dashboard.
   function recordOrder(source, list) {
-    if (!CFG.db || !list.length) return;
-    var items = list.map(function (i) { return { id: i.id, sku: i.sku, title: i.t, qty: i.q, price: i.p || 0 }; });
-    var total = items.reduce(function (n, i) { return n + i.price * i.qty; }, 0);
+    if (!list.length) return '';
+    var items = list.map(function (i) { return { id: i.id, sku: i.sku, title: i.t, qty: i.q, price: i.p || 0, img: i.img || '', url: i.url || '' }; });
+    var total = Math.round(items.reduce(function (n, i) { return n + i.price * i.qty; }, 0) * 100) / 100;
     // Clicar duas vezes no mesmo pedido não deve gerar dois registros.
     var key = source + '|' + items.map(function (i) { return i.id + 'x' + i.qty; }).join(',');
-    if (key === lastOrderKey) return;
+    if (key === lastOrderKey && lastOrderId) return lastOrderId;
+    var id = newId();
     lastOrderKey = key;
-    try { sessionStorage.setItem('mf_last_order', key); } catch (e) { /* ignora */ }
+    lastOrderId = id;
+    try { sessionStorage.setItem('mf_last_order', key); sessionStorage.setItem('mf_last_order_id', id); } catch (e) { /* ignora */ }
     var p = profile || {};
+    var car = (source === 'carrinho' ? vehicle : '') || p.vehicle || '';
+    try {
+      var all = JSON.parse(localStorage.getItem(OKEY) || '[]') || [];
+      all.unshift({ id: id, at: new Date().toISOString(), source: source, items: items, total: total, vehicle: car, synced: Boolean(CFG.db) });
+      localStorage.setItem(OKEY, JSON.stringify(all.slice(0, 60)));
+    } catch (e) { /* sem histórico neste aparelho */ }
     dbInsert('orders', {
-      source: source, items: items, total: Math.round(total * 100) / 100,
+      id: id, source: source, items: items, total: total,
       customer_name: p.name || null, customer_phone: p.phone || null, customer_email: p.email || null,
-      customer_city: p.city || null, customer_cep: p.cep || null,
-      vehicle: (source === 'carrinho' ? vehicle : '') || p.vehicle || null,
+      customer_city: p.city || null, customer_cep: p.cep || null, vehicle: car || null,
     });
+    return id;
   }
 
   var drawer = $('[data-cart-drawer]');
@@ -74,13 +94,13 @@
   var itemsEl = $('[data-cart-items]');
   var vehicleEl = $('[data-cart-vehicle]');
 
-  function checkoutText() {
+  function checkoutText(orderId) {
     var total = 0;
     var lines = cart.map(function (i) {
       total += (i.p || 0) * i.q;
       return '• ' + i.q + 'x ' + i.t + ' (ref. ' + i.sku + ')' + (i.p ? ' — ' + brl(i.p * i.q) : '');
     });
-    return 'Olá! Quero fechar este pedido na ' + CFG.name + ':\n\n' + lines.join('\n') +
+    return 'Olá! Quero fechar este pedido na ' + CFG.name + (orderId ? ' (pedido ' + orderCode(orderId) + ')' : '') + ':\n\n' + lines.join('\n') +
       (total ? '\n\nTotal das peças: ' + brl(total) : '') +
       '\n\nMeu veículo: ' + (vehicle || (profile && profile.vehicle) || '(informar modelo, ano e motor)') +
       customerBlock();
@@ -162,7 +182,11 @@
     if (t.closest('[data-cart-close]')) { openCart(false); return; }
     var co = t.closest('[data-cart-checkout]');
     if (co && !cart.length) { e.preventDefault(); return; }
-    if (co) { recordOrder('carrinho', cart); return; }
+    if (co) {
+      // O número do pedido entra na mensagem no momento do clique, antes de o WhatsApp abrir.
+      co.href = 'https://wa.me/' + CFG.wa + '?text=' + encodeURIComponent(checkoutText(recordOrder('carrinho', cart)));
+      return;
+    }
     var row = t.closest('[data-ci]');
     if (row) {
       var id = Number(row.getAttribute('data-ci'));
@@ -250,11 +274,11 @@
       else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problem = 'Confira o e-mail informado.';
       if (problem) { errEl.textContent = problem; errEl.hidden = false; return; }
       var isNew = !profile;
-      profile = { name: name, phone: maskPhone(phone), email: email, cep: maskCep(f.cep.value), city: f.city.value.trim(), vehicle: f.vehicle.value.trim(), offers: f.offers.checked };
-      try { localStorage.setItem(PKEY, JSON.stringify(profile)); } catch (err) { /* vale só nesta página */ }
-      dbInsert('customers', { name: profile.name, phone: profile.phone, email: profile.email || null, city: profile.city || null, cep: profile.cep || null, vehicle: profile.vehicle || null, accepts_offers: profile.offers });
-      if (profile.vehicle) { vehicle = profile.vehicle; if (vehicleEl) vehicleEl.value = vehicle; persist(); }
-      renderAccount();
+      var next = { name: name, phone: maskPhone(phone), email: email, cep: maskCep(f.cep.value), city: f.city.value.trim(), vehicle: f.vehicle.value.trim(), offers: f.offers.checked };
+      // preserva a lista de veículos mantida na área do cliente
+      var cars = ((profile && profile.vehicles) || []).filter(function (v) { return v !== next.vehicle; });
+      next.vehicles = next.vehicle ? [next.vehicle].concat(cars).slice(0, 6) : cars;
+      storeProfile(next);
       if (!isNew) { openAccount(false); return; }
       var text = 'Olá! Fiz meu cadastro no site da ' + CFG.name + '.' + customerBlock() +
         (profile.vehicle ? '\nVeículo: ' + profile.vehicle : '') +
@@ -271,12 +295,42 @@
       openAccount(false);
     });
   }
+  // Único ponto que grava o cadastro: usado pelo formulário rápido e pela área do cliente.
+  function storeProfile(next) {
+    var isNew = !profile;
+    profile = next;
+    try { if (next) localStorage.setItem(PKEY, JSON.stringify(next)); else localStorage.removeItem(PKEY); } catch (err) { /* vale só nesta página */ }
+    if (next && isNew) dbInsert('customers', { name: next.name, phone: next.phone, email: next.email || null, city: next.city || null, cep: next.cep || null, vehicle: next.vehicle || null, accepts_offers: Boolean(next.offers) });
+    if (next && next.vehicle) { vehicle = next.vehicle; if (vehicleEl) vehicleEl.value = vehicle; persist(); }
+    renderAccount();
+  }
+  window.MF_API = {
+    profile: function () { return profile; },
+    saveProfile: storeProfile,
+    add: function (item) { addItem(item); },
+    openCart: function () { openCart(true); },
+    orderCode: orderCode,
+    maskPhone: maskPhone,
+    maskCep: maskCep,
+  };
+
   document.addEventListener('click', function (e) {
-    if (e.target.closest('[data-acct-open]')) { openAccount(true); return; }
+    var opener = e.target.closest('[data-acct-open]');
+    // Quem já tem cadastro vai do botão do topo direto para a área do cliente.
+    if (opener && profile && opener.classList.contains('acct-btn') && !document.body.hasAttribute('data-account-page')) { location.href = CFG.base + 'minha-conta.html'; return; }
+    if (opener) { openAccount(true); return; }
     if (e.target.closest('[data-acct-close]')) { openAccount(false); return; }
     // Links diretos de compra/dúvida: completa a mensagem com o veículo e os dados de quem tem cadastro.
     var buy = e.target.closest('a[data-buy]');
-    if (buy) { var one = JSON.parse(buy.getAttribute('data-buy')); one.q = 1; recordOrder('produto', [one]); }
+    if (buy) {
+      var one = JSON.parse(buy.getAttribute('data-buy')); one.q = 1;
+      var oid = recordOrder('produto', [one]);
+      if (oid && !buy.hasAttribute('data-order-done')) {
+        var bp = buy.href.split('?text=');
+        buy.href = bp[0] + '?text=' + encodeURIComponent(decodeURIComponent(bp[1] || '').replace(/:\n/, ' (pedido ' + orderCode(oid) + '):\n'));
+        buy.setAttribute('data-order-done', '');
+      }
+    }
     var link = e.target.closest('a[href^="https://wa.me/"]');
     if (link && profile && !link.hasAttribute('data-cart-checkout') && !link.hasAttribute('data-acct-send') && !link.hasAttribute('data-wa-done')) {
       var parts = link.href.split('?text=');

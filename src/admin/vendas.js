@@ -16,6 +16,7 @@
     ['enviado', 'Enviado'], ['concluido', 'Concluído'], ['cancelado', 'Cancelado'],
   ];
   var LABEL = {}; STATUS.forEach(function (s) { LABEL[s[0]] = s[1]; });
+  var CARRIERS = ['Correios', 'Jadlog', 'Transportadora', 'Motoboy', 'Retirada na loja'];
   var CONFIRMED = { pago: 1, enviado: 1, concluido: 1 };
   var OPEN = { novo: 1, em_atendimento: 1 };
 
@@ -174,7 +175,7 @@
     $('[data-orders]').innerHTML = list.slice(0, 200).map(function (o) {
       var wa = waLink(o.customer_phone);
       return '<article class="order" data-order="' + o.id + '">' +
-        '<div class="order-main"><div class="order-when">' + fmtDate(o.created_at) + '<small>' + (o.source === 'produto' ? 'compra direta' : o.source === 'manual' ? 'lançado à mão' : 'carrinho') + '</small></div>' +
+        '<div class="order-main"><div class="order-when">' + fmtDate(o.created_at) + '<small>#' + esc(String(o.id).slice(0, 8).toUpperCase()) + '</small><small>' + (o.source === 'produto' ? 'compra direta' : o.source === 'manual' ? 'lançado à mão' : 'carrinho') + '</small></div>' +
         '<div class="order-who"><strong>' + esc(o.customer_name || 'Cliente sem cadastro') + '</strong>' +
         (o.customer_phone ? (wa ? '<a href="' + wa + '" target="_blank" rel="noopener">' + esc(o.customer_phone) + '</a>' : '<span>' + esc(o.customer_phone) + '</span>') : '') +
         (o.vehicle ? '<span>Veículo: ' + esc(o.vehicle) + '</span>' : '') +
@@ -182,6 +183,8 @@
         '<ul class="order-items">' + (o.items || []).map(function (i) { return '<li>' + esc(i.qty) + '× ' + esc(i.title) + ' <small>ref. ' + esc(i.sku) + '</small></li>'; }).join('') + '</ul>' +
         '<div class="order-total">' + brl(o.total) + '</div></div>' +
         '<div class="order-foot"><label>Situação <select data-set-status>' + STATUS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === o.status ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label>' +
+        '<label>Transportadora <select data-set-carrier><option value="">—</option>' + CARRIERS.map(function (c) { return '<option' + (c === o.carrier ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></label>' +
+        '<label>Código de rastreio <input type="text" data-set-tracking maxlength="60" value="' + esc(o.tracking_code || '') + '" placeholder="Ex.: AA123456789BR"></label>' +
         '<label class="order-notes">Observação <input type="text" data-set-notes maxlength="2000" value="' + esc(o.notes || '') + '" placeholder="Ex.: pago no Pix, enviado por Correios"></label></div></article>';
     }).join('') || '<p class="dash-empty">Nenhum pedido ' + (filter ? 'nessa situação' : 'no período') + '.</p>';
   }
@@ -245,6 +248,8 @@
   document.addEventListener('change', function (e) {
     var row = e.target.closest('[data-order]');
     if (row && e.target.matches('[data-set-status]')) updateOrder(row.getAttribute('data-order'), { status: e.target.value });
+    else if (row && e.target.matches('[data-set-carrier]')) updateOrder(row.getAttribute('data-order'), { carrier: e.target.value || null });
+    else if (row && e.target.matches('[data-set-tracking]')) updateOrder(row.getAttribute('data-order'), { tracking_code: e.target.value.trim().toUpperCase() || null });
     else if (row && e.target.matches('[data-set-notes]')) updateOrder(row.getAttribute('data-order'), { notes: e.target.value.trim() || null });
     else if (e.target.matches('[data-period]')) load().catch(fail);
     else if (e.target.matches('[data-status-filter]')) renderOrders();

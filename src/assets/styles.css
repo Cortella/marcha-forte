@@ -479,3 +479,92 @@ code { font: 600 13.5px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; ba
 
 /* O ícone do WhatsApp é sempre verde: verde da marca sobre fundo escuro, branco sobre botão verde. */
 .hlink svg { color: #25d366; width: 22px; height: 22px; }
+
+/* Área do cliente */
+.acc { padding-block: 26px 64px; }
+.acc-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.acc-head .eyebrow { color: var(--steel); margin-bottom: 6px; }
+.acc-head h1 { font-size: clamp(34px, 5vw, 52px); font-weight: 700; text-transform: uppercase; }
+.acc-sub { margin: 6px 0 0; color: var(--steel); max-width: 60ch; }
+.acc-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; border-bottom: 2px solid var(--line); margin-bottom: 18px; }
+.acc-tabs::-webkit-scrollbar { display: none; }
+.acc-tabs button { flex: 0 0 auto; background: transparent; border: 0; border-bottom: 3px solid transparent; margin-bottom: -2px; padding: 12px 14px; font: 600 15.5px var(--body); color: var(--steel); cursor: pointer; white-space: nowrap; }
+.acc-tabs button:hover { color: var(--ink); }
+.acc-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--yellow); }
+.acc-card { background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 22px; margin-bottom: 14px; max-width: 640px; }
+.acc-card h2, .acc-track h2, .acc-empty h2 { font-size: 26px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+.acc-card.acct-form { padding: 22px; }
+.acc-card .btn-lg { justify-self: start; }
+.acc-danger p, .acc-help p { color: #3a424c; }
+.acc-help { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.acc-help .acc-card { margin: 0; max-width: none; }
+.acc-empty { background: var(--card); border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 40px 20px; text-align: center; }
+.acc-empty p, .acc-empty-text { color: var(--steel); }
+.acc-track { margin-bottom: 22px; }
+
+.acc-order { background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+.acc-order.is-linked { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(255, 183, 3, .5); }
+.acc-order > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; background: var(--asphalt); color: #fff; }
+.acc-order > header strong { font: 700 22px/1.1 var(--display); letter-spacing: .02em; display: block; }
+.acc-order > header span { font-size: 13px; color: #b9c0c8; }
+.acc-order-total { font: 700 26px/1 var(--display); white-space: nowrap; }
+.acc-items { list-style: none; margin: 0; padding: 6px 18px; display: grid; }
+.acc-items li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.acc-items li:last-child { border-bottom: 0; }
+.acc-items img, .acc-noimg { width: 56px; height: 56px; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.acc-items a { font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.acc-items a:hover { text-decoration: underline; }
+.acc-items div { font-weight: 600; min-width: 0; }
+.acc-items small { display: block; font-weight: 400; color: var(--steel); margin-top: 2px; }
+.acc-vehicle { margin: 0; padding: 0 18px 12px; font-size: 14px; color: var(--steel); }
+.acc-vehicle strong { color: var(--ink); }
+.acc-progress { padding: 16px 18px; background: var(--bg); border-block: 1.5px solid var(--line); }
+.acc-status-text { margin: 0; color: #3a424c; }
+.acc-steps { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); font-size: 12.5px; font-weight: 600; color: var(--steel); text-align: center; }
+.acc-steps li { position: relative; padding-top: 26px; line-height: 1.25; }
+.acc-steps li::before { content: ""; position: absolute; top: 8px; left: -50%; width: 100%; height: 3px; background: var(--line); }
+.acc-steps li:first-child::before { display: none; }
+.acc-steps span { position: absolute; top: 1px; left: 50%; translate: -50% 0; width: 17px; height: 17px; border-radius: 50%; background: var(--card); border: 3px solid var(--line); z-index: 1; }
+.acc-steps .is-done, .acc-steps .is-now { color: var(--ink); }
+.acc-steps .is-done::before, .acc-steps .is-now::before { background: var(--wa); }
+.acc-steps .is-done span { background: var(--wa); border-color: var(--wa); }
+.acc-steps .is-now span { background: var(--yellow); border-color: var(--ink); }
+.acc-cancel { margin: 0 0 8px; font: 700 20px var(--display); text-transform: uppercase; color: var(--danger); }
+.acc-ship { display: flex; gap: 12px 22px; align-items: center; flex-wrap: wrap; margin-top: 14px; padding: 12px 14px; background: var(--card); border: 1.5px solid var(--line); border-radius: 8px; }
+.acc-ship div { display: grid; }
+.acc-ship span { font: 700 11.5px/1.2 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--steel); }
+.acc-code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .04em; }
+.acc-ship .btn { padding: 8px 12px; font-size: 14px; }
+.acc-order > footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 18px; }
+.acc-order > footer .btn { font-size: 14px; padding: 9px 13px; }
+.acc-forget { margin-left: auto; background: transparent; border: 0; color: var(--steel); font: 600 13px var(--body); text-decoration: underline; cursor: pointer; padding: 6px; }
+.acc-forget:hover { color: var(--danger); }
+
+.acc-cars { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 8px; }
+.acc-cars li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; background: var(--bg); border-radius: 8px; }
+.acc-cars li.acc-empty-text { display: block; background: transparent; padding: 4px 0; }
+.acc-main { margin-left: 8px; font: 700 11px/1 var(--body); text-transform: uppercase; letter-spacing: .05em; background: var(--yellow); padding: 4px 6px; border-radius: 4px; }
+.acc-car-actions { display: flex; gap: 12px; }
+.acc-car-actions button { background: transparent; border: 0; padding: 4px 0; font: 600 13.5px var(--body); text-decoration: underline; cursor: pointer; color: var(--ink); }
+.acc-car-form { display: flex; gap: 8px; }
+.acc-car-form input { flex: 1; min-width: 0; font: 500 16px var(--body); padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+.acc-toast { justify-content: center; left: 50%; right: auto; translate: -50% 12px; width: max-content; max-width: calc(100% - 24px); bottom: 24px; overflow-wrap: anywhere; }
+.acc-toast.is-on { translate: -50% 0; }
+@media (max-width: 720px) {
+  .acc { padding-block: 16px 40px; }
+  .acc-head .btn { display: none; }
+  .acc-tabs { margin-inline: -12px; padding-inline: 12px; }
+  .acc-card { padding: 16px; }
+  .acc-order > header, .acc-items, .acc-progress, .acc-order > footer { padding-inline: 14px; }
+  .acc-vehicle { padding-inline: 14px; }
+  .acc-steps { grid-template-columns: 1fr; text-align: left; gap: 0; font-size: 14px; }
+  .acc-steps li { padding: 0 0 14px 30px; }
+  .acc-steps li:last-child { padding-bottom: 0; }
+  .acc-steps li::before { top: -100%; left: 7px; width: 3px; height: 100%; }
+  .acc-steps span { left: 0; top: 0; translate: none; }
+  .acc-order > footer .btn { flex: 1 1 100%; }
+  .acc-forget { margin: 0 auto; }
+  .acc-ship .btn { flex: 1 1 100%; }
+}
+.acc-tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.acc-tools .btn { font-size: 14px; padding: 8px 12px; }

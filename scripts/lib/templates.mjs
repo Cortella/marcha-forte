@@ -23,7 +23,7 @@ const logo = (base) => `<a class="logo" href="${base}index.html" aria-label="Mar
   <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#FFB703"/><path d="M11 10v20M20 10v20M29 10v20M11 20h18" stroke="#111418" stroke-width="3.400" stroke-linecap="round" fill="none"/><circle cx="29" cy="10" r="4.600" fill="#111418"/></svg>
   <span class="logo-text">MARCHA<b>FORTE</b></span></a>`;
 
-function shell({ cfg, base, title, description, canonical, body, head = '', scripts = '' }) {
+function shell({ cfg, base, title, description, canonical, body, head = '', scripts = '', bodyAttrs = '', after = '' }) {
   const helpText = `Olá! Vim pelo site da ${cfg.name} e preciso de ajuda para encontrar uma peça.`;
   return `<!doctype html>
 <html lang="pt-BR">
@@ -44,7 +44,7 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ''}
 <link rel="stylesheet" href="${base}assets/styles.css">
 ${head}
 </head>
-<body>
+<body${bodyAttrs}>
 <div class="topbar"><div class="wrap">
   <span>${ICON.check} Garantia de ${cfg.warrantyDays} dias</span>
   <span>${ICON.check} Compatibilidade confirmada antes de você pagar</span>
@@ -78,6 +78,7 @@ ${body}
       <li><a href="${base}index.html#como-comprar">Como comprar</a></li>
       <li><a href="${base}admin/index.html" rel="nofollow">Área do administrador</a></li>
       <li><a href="${base}index.html#duvidas">Dúvidas frequentes</a></li>
+      <li><a href="${base}minha-conta.html">Minha conta e pedidos</a></li>
     </ul>
     ${cfg.cityLine ? `<p>${esc(cfg.cityLine)}</p>` : ''}
   </div>
@@ -129,9 +130,10 @@ ${body}
     <button class="btn btn-ghost btn-block" type="button" data-acct-close>Continuar comprando</button>
   </div>
 </div>
-<script>window.MF_CFG=${JSON.stringify({ wa: cfg.whatsapp, name: cfg.name, base, db: hasDb(cfg) ? { url: cfg.supabaseUrl, key: cfg.supabaseAnonKey } : null })};</script>
+<script>window.MF_CFG=${JSON.stringify({ wa: cfg.whatsapp, name: cfg.name, base, site: cfg.siteUrl, warranty: cfg.warrantyDays, db: hasDb(cfg) ? { url: cfg.supabaseUrl, key: cfg.supabaseAnonKey } : null })};</script>
 ${scripts}
 <script src="${base}assets/app.js" defer></script>
+${after}
 </body>
 </html>`;
 }
@@ -298,6 +300,93 @@ export function homePage({ cfg, products, brandOptions, groupCounts, typeCounts,
 
 const list = (items, cls = '') => `<ul class="${cls}">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`;
 const isSubhead = (l) => (/[:：]$/.test(l) && l.length < 40) || (l.length < 28 && !/\d/.test(l) && l === l.toUpperCase() && /\p{L}{3}/u.test(l));
+
+// Área do cliente. O conteúdo é montado no navegador (src/assets/account.js) a partir do
+// cadastro e do histórico guardados no aparelho, mais o andamento vindo do banco quando há um.
+export function accountPage({ cfg }) {
+  const base = '';
+  const body = `
+<main class="wrap acc" data-account>
+  <div class="acc-head">
+    <div>
+      <p class="eyebrow">Minha conta</p>
+      <h1 data-acc-hello>Minha conta</h1>
+      <p class="acc-sub" data-acc-sub></p>
+    </div>
+    <a class="btn btn-ghost" href="index.html#catalogo">Continuar comprando</a>
+  </div>
+
+  <nav class="acc-tabs" role="tablist" aria-label="Seções da conta">
+    <button type="button" role="tab" data-tab="pedidos" aria-selected="true">Meus pedidos</button>
+    <button type="button" role="tab" data-tab="dados" aria-selected="false">Meus dados</button>
+    <button type="button" role="tab" data-tab="veiculos" aria-selected="false">Meus veículos</button>
+    <button type="button" role="tab" data-tab="ajuda" aria-selected="false">Ajuda</button>
+  </nav>
+
+  <section class="acc-panel" data-panel="pedidos">
+    <div class="acc-tools"><button class="btn btn-ghost" type="button" data-acc-refresh hidden>Atualizar andamento</button></div>
+    <div class="acc-track" data-track hidden></div>
+    <div data-orders></div>
+  </section>
+
+  <section class="acc-panel" data-panel="dados" hidden>
+    <form class="acc-card acct-form" data-acc-form novalidate>
+      <h2>Meus dados</h2>
+      <p class="acct-intro" data-acc-form-intro></p>
+      <label>Nome completo<input type="text" name="name" autocomplete="name" required></label>
+      <label>WhatsApp com DDD<input type="tel" name="phone" autocomplete="tel-national" inputmode="numeric" placeholder="(11) 99999-9999" required></label>
+      <label>E-mail <small>(opcional)</small><input type="email" name="email" autocomplete="email"></label>
+      <div class="acct-row">
+        <label>CEP <small>(opcional)</small><input type="text" name="cep" autocomplete="postal-code" inputmode="numeric" placeholder="00000-000"></label>
+        <label>Cidade / UF <small>(opcional)</small><input type="text" name="city" autocomplete="address-level2" placeholder="São Paulo / SP"></label>
+      </div>
+      <label class="acct-check"><input type="checkbox" name="offers"> Quero receber ofertas da ${esc(cfg.name)} pelo WhatsApp</label>
+      <p class="acct-error" data-acc-error role="alert" hidden></p>
+      <button class="btn btn-primary btn-lg" type="submit">Salvar meus dados</button>
+      <p class="acct-privacy">${hasDb(cfg)
+    ? `Seu cadastro é enviado à ${esc(cfg.name)} quando você o cria e segue junto com cada pedido. Para corrigir ou excluir os dados que estão com a loja, fale com a gente pelo WhatsApp.`
+    : `Seus dados ficam guardados apenas neste aparelho e só chegam à ${esc(cfg.name)} junto com os pedidos que você envia pelo WhatsApp.`}</p>
+    </form>
+    <div class="acc-card acc-danger" data-acc-danger hidden>
+      <h2>Privacidade</h2>
+      <p>Você pode apagar deste aparelho o cadastro, os veículos e o histórico de pedidos. Isso não cancela pedidos já enviados.</p>
+      <button class="btn btn-ghost" type="button" data-acc-wipe>Apagar meus dados deste aparelho</button>
+    </div>
+  </section>
+
+  <section class="acc-panel" data-panel="veiculos" hidden>
+    <div class="acc-card">
+      <h2>Meus veículos</h2>
+      <p class="acct-intro">O veículo principal já vai preenchido nos seus pedidos, para a gente confirmar a compatibilidade mais rápido.</p>
+      <ul class="acc-cars" data-cars></ul>
+      <form class="acc-car-form" data-car-form>
+        <input type="text" name="car" maxlength="80" placeholder="Ex.: Palio 1.0 Fire 2012" aria-label="Novo veículo (modelo, ano e motor)" required>
+        <button class="btn btn-dark" type="submit">Adicionar</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="acc-panel" data-panel="ajuda" hidden>
+    <div class="acc-help">
+      <div class="acc-card"><h2>Garantia</h2><p>Todas as peças têm ${cfg.warrantyDays} dias de garantia contra defeito de fabricação. Para acionar, fale com a gente informando o número do pedido.</p></div>
+      <div class="acc-card"><h2>A peça não serviu?</h2><p>Chame o atendimento antes de instalar. Tenha em mãos o número do pedido e os dados do veículo (modelo, ano, motor ou chassi).</p></div>
+      <div class="acc-card"><h2>Acompanhar a entrega</h2><p>Quando o pedido é despachado, o código de rastreio aparece em “Meus pedidos”. O prazo e a forma de envio são combinados no atendimento.</p></div>
+      <div class="acc-card"><h2>Falar com a loja</h2><p>O atendimento é feito pelo WhatsApp.</p><a class="btn btn-wa" href="${esc(waUrl(cfg, `Olá! Preciso de ajuda com a minha conta na ${cfg.name}.`))}" target="_blank" rel="noopener">${ICON.wa} Abrir o WhatsApp</a></div>
+    </div>
+  </section>
+</main>`;
+  return shell({
+    cfg, base,
+    title: `Minha conta | ${cfg.name}`,
+    description: `Acompanhe seus pedidos, o rastreio e seus dados cadastrados na ${cfg.name}.`,
+    canonical: '',
+    body,
+    head: '<meta name="robots" content="noindex">',
+    scripts: '',
+    bodyAttrs: ' data-account-page',
+    after: '<script src="assets/account.js" defer></script>',
+  });
+}
 
 export function productPage({ cfg, p, related }) {
   const base = '../';

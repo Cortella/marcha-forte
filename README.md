@@ -56,6 +56,15 @@ e cadastro; ler e alterar exige um usuário listado em `admins`. Nunca coloque a
 Um pedido registrado é uma intenção de compra (o cliente clicou para enviar no WhatsApp). Ele vira venda
 quando o administrador muda a situação para *pago*, *enviado* ou *concluído*.
 
+## Área do cliente — `/minha-conta.html`
+
+Meus pedidos (itens, total, andamento, rastreio, "pedir de novo"), meus dados, meus veículos e ajuda.
+Não há login: cadastro e histórico ficam no aparelho do cliente. Com o banco configurado, o andamento e
+o código de rastreio vêm da loja pela função `order_status` do `schema.sql`, consultada pelo id do
+pedido (UUID aleatório). O link "Copiar link de acompanhamento" abre o mesmo pedido em outro aparelho.
+O número curto do pedido (`#ABCD1234`) aparece na mensagem de WhatsApp, na área do cliente e na dashboard.
+A transportadora e o código de rastreio são preenchidos pelo administrador em `/admin/vendas.html`.
+
 ## Onde mexer
 
 - `scripts/lib/knowledge.mjs` — tipos de peça (texto "para que serve", sintomas, dica), montadoras e modelos.

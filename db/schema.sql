@@ -43,6 +43,10 @@ create table if not exists public.orders (
   notes text check (char_length(notes) <= 2000)
 );
 
+-- Rastreio: preenchido pelo administrador na dashboard e mostrado ao cliente em "Minha conta".
+alter table public.orders add column if not exists carrier text check (char_length(carrier) <= 60);
+alter table public.orders add column if not exists tracking_code text check (char_length(tracking_code) <= 60);
+
 create index if not exists orders_created_at_idx on public.orders (created_at desc);
 create index if not exists orders_status_idx on public.orders (status);
 
@@ -79,7 +83,8 @@ create policy "admins leem a propria linha" on public.admins
 drop policy if exists "site registra pedido" on public.orders;
 create policy "site registra pedido" on public.orders
   for insert to anon, authenticated
-  with check (status = 'novo' and source in ('carrinho', 'produto') and notes is null and updated_at is null);
+  with check (status = 'novo' and source in ('carrinho', 'produto') and notes is null and updated_at is null
+              and carrier is null and tracking_code is null);
 
 drop policy if exists "admin le pedidos" on public.orders;
 create policy "admin le pedidos" on public.orders
@@ -108,6 +113,30 @@ create policy "admin le clientes" on public.customers
 drop policy if exists "admin apaga clientes" on public.customers;
 create policy "admin apaga clientes" on public.customers
   for delete to authenticated using (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- Acompanhamento do pedido pelo cliente ("Minha conta").
+-- O cliente não tem login: quem conhece o id do pedido (um UUID aleatório, gerado no
+-- aparelho dele na hora da compra) pode consultar o andamento. A função devolve só o
+-- andamento e os itens — nunca nome, telefone ou endereço.
+-- ---------------------------------------------------------------------------
+create or replace function public.order_status(p_ids uuid[])
+returns table (
+  id uuid, status text, carrier text, tracking_code text,
+  created_at timestamptz, updated_at timestamptz, items jsonb, total numeric
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select o.id, o.status, o.carrier, o.tracking_code, o.created_at, o.updated_at, o.items, o.total
+  from public.orders o
+  where o.id = any (p_ids[1:60]);
+$$;
+
+revoke all on function public.order_status(uuid[]) from public;
+grant execute on function public.order_status(uuid[]) to anon, authenticated;
 
 grant insert on public.orders, public.customers to anon;
 grant select, insert, update, delete on public.orders, public.customers to authenticated;

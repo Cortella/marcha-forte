@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { GROUPS, TYPES, BRANDS } from './lib/knowledge.mjs';
 import { norm, cleanTitle, detectType, detectVehicles, parseDescription, cleanDescriptionText, extractCodes, gtinOf, retailPrice } from './lib/normalize.mjs';
-import { homePage, productPage } from './lib/templates.mjs';
+import { homePage, productPage, accountPage } from './lib/templates.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'site');
@@ -118,6 +118,7 @@ for (const g of GROUPS) {
 }
 
 await writeFile(path.join(out, 'index.html'), homePage({ cfg, products, brandOptions, groupCounts, typeCounts, groupImages }));
+await writeFile(path.join(out, 'minha-conta.html'), accountPage({ cfg }));
 for (const p of products) {
   await writeFile(path.join(out, 'produto', `${p.slug}.html`), productPage({ cfg, p, related: relatedOf(p) }));
 }
