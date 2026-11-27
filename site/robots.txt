@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://cortella.github.io/marcha-forte/sitemap.xml
