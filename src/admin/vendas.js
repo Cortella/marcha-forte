@@ -179,7 +179,10 @@
         '<div class="order-who"><strong>' + esc(o.customer_name || 'Cliente sem cadastro') + '</strong>' +
         (o.customer_phone ? (wa ? '<a href="' + wa + '" target="_blank" rel="noopener">' + esc(o.customer_phone) + '</a>' : '<span>' + esc(o.customer_phone) + '</span>') : '') +
         (o.vehicle ? '<span>Veículo: ' + esc(o.vehicle) + '</span>' : '') +
-        (o.customer_city || o.customer_cep ? '<span>' + esc([o.customer_city, o.customer_cep].filter(Boolean).join(' — ')) + '</span>' : '') + '</div>' +
+        (o.delivery_address ? '<span>Entrega: ' + esc(o.delivery_address) + '</span>' : '') +
+        (o.payment_method ? '<span>Pagamento: ' + esc(o.payment_method) + '</span>' : '') +
+        (o.customer_note ? '<span>Obs. do cliente: ' + esc(o.customer_note) + '</span>' : '') +
+        (!o.delivery_address && (o.customer_city || o.customer_cep) ? '<span>' + esc([o.customer_city, o.customer_cep].filter(Boolean).join(' — ')) + '</span>' : '') + '</div>' +
         '<ul class="order-items">' + (o.items || []).map(function (i) { return '<li>' + esc(i.qty) + '× ' + esc(i.title) + ' <small>ref. ' + esc(i.sku) + '</small></li>'; }).join('') + '</ul>' +
         '<div class="order-total">' + brl(o.total) + '</div></div>' +
         '<div class="order-foot"><label>Situação <select data-set-status>' + STATUS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === o.status ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></label>' +

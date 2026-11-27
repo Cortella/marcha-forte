@@ -23,7 +23,7 @@ const logo = (base) => `<a class="logo" href="${base}index.html" aria-label="Mar
   <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#FFB703"/><path d="M11 10v20M20 10v20M29 10v20M11 20h18" stroke="#111418" stroke-width="3.400" stroke-linecap="round" fill="none"/><circle cx="29" cy="10" r="4.600" fill="#111418"/></svg>
   <span class="logo-text">MARCHA<b>FORTE</b></span></a>`;
 
-function shell({ cfg, base, title, description, canonical, body, head = '', scripts = '', bodyAttrs = '', after = '' }) {
+function shell({ cfg, base, title, description, canonical, body, head = '', scripts = '', bodyAttrs = '', after = '', minimal = false }) {
   const helpText = `Olá! Vim pelo site da ${cfg.name} e preciso de ajuda para encontrar uma peça.`;
   return `<!doctype html>
 <html lang="pt-BR">
@@ -98,8 +98,8 @@ ${body}
       <input type="text" data-cart-vehicle placeholder="Ex.: Palio 1.0 Fire 2012" autocomplete="off">
     </label>
     <div class="drawer-total"><span>Total das peças</span><strong data-cart-total>R$ 0,00</strong></div>
-    <a class="btn btn-wa btn-block" data-cart-checkout href="#" target="_blank" rel="noopener">${ICON.wa} Finalizar pedido no WhatsApp</a>
-    <p class="drawer-note">Você não paga nada agora. A gente confirma a compatibilidade, o frete e a forma de pagamento na conversa.${hasDb(cfg) ? ' Ao finalizar, o pedido também fica registrado na loja.' : ''}</p>
+    <a class="btn btn-primary btn-lg btn-block" data-cart-go href="${base}checkout.html">Finalizar compra</a>
+    <p class="drawer-note">Na próxima etapa você confere seus dados e o endereço de entrega. Nada é cobrado agora.${hasDb(cfg) ? ' Ao finalizar, o pedido também fica registrado na loja.' : ''}</p>
   </div>
 </aside>
 <div class="modal-backdrop" data-acct-close hidden></div>
@@ -319,6 +319,7 @@ export function accountPage({ cfg }) {
   <nav class="acc-tabs" role="tablist" aria-label="Seções da conta">
     <button type="button" role="tab" data-tab="pedidos" aria-selected="true">Meus pedidos</button>
     <button type="button" role="tab" data-tab="dados" aria-selected="false">Meus dados</button>
+    <button type="button" role="tab" data-tab="enderecos" aria-selected="false">Meus endereços</button>
     <button type="button" role="tab" data-tab="veiculos" aria-selected="false">Meus veículos</button>
     <button type="button" role="tab" data-tab="ajuda" aria-selected="false">Ajuda</button>
   </nav>
@@ -354,6 +355,20 @@ export function accountPage({ cfg }) {
     </div>
   </section>
 
+  <section class="acc-panel" data-panel="enderecos" hidden>
+    <div class="acc-card">
+      <h2>Meus endereços</h2>
+      <p class="acct-intro">Salve mais de um endereço de entrega (casa, oficina, trabalho) e escolha na hora de finalizar a compra.</p>
+      <ul class="acc-cars" data-addrs></ul>
+      <button class="btn btn-dark" type="button" data-addr-new>Adicionar endereço</button>
+      <form class="acct-form acc-addr-form" data-addr-form novalidate hidden>
+        ${addressFields()}
+        <p class="acct-error" data-addr-error role="alert" hidden></p>
+        <div class="adm-actions"><button class="btn btn-ghost" type="button" data-addr-cancel>Cancelar</button><button class="btn btn-primary" type="submit">Salvar endereço</button></div>
+      </form>
+    </div>
+  </section>
+
   <section class="acc-panel" data-panel="veiculos" hidden>
     <div class="acc-card">
       <h2>Meus veículos</h2>
@@ -384,7 +399,122 @@ export function accountPage({ cfg }) {
     head: '<meta name="robots" content="noindex">',
     scripts: '',
     bodyAttrs: ' data-account-page',
-    after: '<script src="assets/account.js" defer></script>',
+    after: '<script src="assets/address.js" defer></script>\n<script src="assets/account.js" defer></script>',
+  });
+}
+
+// Campos de endereço, usados no checkout e em "Meus endereços".
+const addressFields = () => `
+      <div class="addr-grid">
+        <label class="a-cep">CEP<input type="text" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9"><small data-cep-status></small></label>
+        <label class="a-street">Rua / avenida<input type="text" name="street" autocomplete="address-line1" maxlength="120"></label>
+        <label class="a-number">Número<input type="text" name="number" inputmode="numeric" maxlength="12"></label>
+        <label class="a-comp">Complemento <small>(opcional)</small><input type="text" name="comp" autocomplete="address-line2" maxlength="60" placeholder="Apto, bloco, sala"></label>
+        <label class="a-district">Bairro<input type="text" name="district" maxlength="80"></label>
+        <label class="a-city">Cidade<input type="text" name="city" autocomplete="address-level2" maxlength="80"></label>
+        <label class="a-uf">UF<input type="text" name="uf" autocomplete="address-level1" maxlength="2" placeholder="SP"></label>
+        <label class="a-label">Nome deste endereço <small>(opcional)</small><input type="text" name="label" maxlength="30" placeholder="Casa, oficina, trabalho"></label>
+      </div>`;
+
+// Checkout da marca: uma página só, sem distrações, que já chega preenchida para quem tem
+// cadastro ou já comprou neste aparelho. O pedido é fechado no WhatsApp (não há gateway de pagamento).
+export function checkoutPage({ cfg }) {
+  const base = '';
+  const payments = cfg.paymentOptions ?? ['Pix', 'Cartão de crédito', 'Combinar no atendimento'];
+  const body = `
+<div class="co-bar"><div class="wrap co-bar-in">
+  <a href="index.html#catalogo">← Continuar comprando</a>
+  <ol class="co-progress"><li class="is-done">Carrinho</li><li class="is-now">Seus dados</li><li>Confirmação no WhatsApp</li></ol>
+</div></div>
+
+<main class="wrap co" data-checkout>
+  <div class="co-empty" data-co-empty hidden>
+    <h1>Seu carrinho está vazio</h1>
+    <p>Escolha as peças no catálogo e volte para finalizar.</p>
+    <a class="btn btn-primary btn-lg" href="index.html#catalogo">Ver o catálogo</a>
+  </div>
+
+  <div class="co-done" data-co-done hidden>
+    <p class="co-done-check">${ICON.check}</p>
+    <h1>Pedido <span data-co-code></span> enviado!</h1>
+    <p>Abrimos o WhatsApp com o seu pedido pronto: é só tocar em <strong>enviar</strong> na conversa. O atendimento confirma a compatibilidade, o frete e o pagamento com você.</p>
+    <a class="btn btn-wa btn-lg" data-co-reopen href="#" target="_blank" rel="noopener">${ICON.wa} O WhatsApp não abriu? Toque aqui</a>
+    <div class="co-done-links"><a class="btn btn-dark" href="minha-conta.html">Acompanhar meu pedido</a><a class="btn btn-ghost" href="index.html#catalogo">Voltar ao catálogo</a></div>
+  </div>
+
+  <form class="co-grid" data-co-form novalidate hidden>
+    <div class="co-main">
+      <h1>Finalizar compra</h1>
+      <p class="co-welcome" data-co-welcome hidden></p>
+
+      <section class="co-sec" data-sec="who">
+        <header><span class="co-n">1</span><h2>Seus dados</h2><button type="button" class="co-edit" data-sec-edit hidden>Alterar</button></header>
+        <div class="co-view" data-sec-view hidden></div>
+        <div class="co-fields" data-sec-fields>
+          <label>Nome completo<input type="text" name="name" autocomplete="name" maxlength="120"></label>
+          <div class="co-two">
+            <label>WhatsApp com DDD<input type="tel" name="phone" autocomplete="tel-national" inputmode="numeric" placeholder="(11) 99999-9999"></label>
+            <label>E-mail <small>(opcional)</small><input type="email" name="email" autocomplete="email" maxlength="160"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="co-sec" data-sec="ship">
+        <header><span class="co-n">2</span><h2>Entrega</h2></header>
+        <div class="co-options" data-addr-list></div>
+        <div class="co-fields" data-addr-form hidden>${addressFields()}</div>
+        <p class="co-hint">O frete e o prazo são calculados pelo atendimento e confirmados com você antes do pagamento.</p>
+      </section>
+
+      <section class="co-sec" data-sec="car">
+        <header><span class="co-n">3</span><h2>Veículo</h2></header>
+        <div class="co-chips" data-car-chips></div>
+        <label>Modelo, ano e motor <small>(ou placa/chassi)</small><input type="text" name="vehicle" maxlength="200" placeholder="Ex.: Palio 1.0 Fire 2012"></label>
+        <p class="co-hint">Com o veículo informado, conferimos a compatibilidade de cada peça antes de fechar.</p>
+      </section>
+
+      <section class="co-sec" data-sec="pay">
+        <header><span class="co-n">4</span><h2>Como prefere pagar</h2></header>
+        <div class="co-pills">${payments.map((m, i) => `<label><input type="radio" name="payment" value="${esc(m)}"${i === 0 ? ' checked' : ''}><span>${esc(m)}</span></label>`).join('')}</div>
+        <p class="co-hint">Nada é cobrado agora. O pagamento é combinado no atendimento, depois de confirmada a compatibilidade.</p>
+        <label>Observação <small>(opcional)</small><textarea name="note" rows="2" maxlength="600" placeholder="Ex.: preciso para sexta, entregar em horário comercial"></textarea></label>
+      </section>
+
+      <label class="acct-check co-save"><input type="checkbox" name="save" checked> <span data-co-save-label>Salvar meus dados e este endereço para as próximas compras</span></label>
+      <p class="acct-privacy">${hasDb(cfg)
+    ? `Seus dados são usados pela ${esc(cfg.name)} apenas para atender este pedido. O CEP é consultado no serviço público ViaCEP para preencher o endereço.`
+    : `Seus dados seguem para a ${esc(cfg.name)} junto com o pedido, pelo WhatsApp. O CEP é consultado no serviço público ViaCEP para preencher o endereço.`}</p>
+    </div>
+
+    <aside class="co-side">
+      <div class="co-summary">
+        <h2>Resumo do pedido</h2>
+        <ul class="co-items" data-co-items></ul>
+        <dl class="co-totals">
+          <div><dt>Peças</dt><dd data-co-subtotal></dd></div>
+          <div><dt>Frete</dt><dd>a confirmar</dd></div>
+          <div class="co-total"><dt>Total das peças</dt><dd data-co-total></dd></div>
+        </dl>
+        <p class="acct-error" data-co-error role="alert" hidden></p>
+        <button class="btn btn-wa btn-lg btn-block" type="submit">${ICON.wa} Enviar pedido</button>
+        <ul class="co-assure">
+          <li>${ICON.check} Garantia de ${cfg.warrantyDays} dias</li>
+          <li>${ICON.check} Compatibilidade conferida antes do pagamento</li>
+          <li>${ICON.check} Atendimento humano pelo WhatsApp</li>
+        </ul>
+      </div>
+    </aside>
+  </form>
+</main>`;
+  return shell({
+    cfg, base,
+    title: `Finalizar compra | ${cfg.name}`,
+    description: `Finalize seu pedido na ${cfg.name}.`,
+    canonical: '',
+    body,
+    head: '<meta name="robots" content="noindex">',
+    bodyAttrs: ' class="is-checkout" data-account-page',
+    after: '<script src="assets/address.js" defer></script>\n<script src="assets/checkout.js" defer></script>',
   });
 }
 

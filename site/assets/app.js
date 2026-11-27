@@ -63,28 +63,35 @@
   }
   // Guarda o pedido no aparelho (histórico da área do cliente) e, com banco configurado, na loja.
   // Devolve o id do pedido — o mesmo número aparece na mensagem de WhatsApp e na dashboard.
-  function recordOrder(source, list) {
+  // `extra` vem do checkout: { customer, address, addressText, payment, note, vehicle }.
+  function recordOrder(source, list, extra) {
     if (!list.length) return '';
+    extra = extra || null;
     var items = list.map(function (i) { return { id: i.id, sku: i.sku, title: i.t, qty: i.q, price: i.p || 0, img: i.img || '', url: i.url || '' }; });
     var total = Math.round(items.reduce(function (n, i) { return n + i.price * i.qty; }, 0) * 100) / 100;
     // Clicar duas vezes no mesmo pedido não deve gerar dois registros.
     var key = source + '|' + items.map(function (i) { return i.id + 'x' + i.qty; }).join(',');
-    if (key === lastOrderKey && lastOrderId) return lastOrderId;
+    if (!extra && key === lastOrderKey && lastOrderId) return lastOrderId;
     var id = newId();
     lastOrderKey = key;
     lastOrderId = id;
     try { sessionStorage.setItem('mf_last_order', key); sessionStorage.setItem('mf_last_order_id', id); } catch (e) { /* ignora */ }
-    var p = profile || {};
-    var car = (source === 'carrinho' ? vehicle : '') || p.vehicle || '';
+    var p = (extra && extra.customer) || profile || {};
+    var addr = (extra && extra.address) || null;
+    var car = extra ? (extra.vehicle || '') : ((source === 'carrinho' ? vehicle : '') || p.vehicle || '');
     try {
       var all = JSON.parse(localStorage.getItem(OKEY) || '[]') || [];
-      all.unshift({ id: id, at: new Date().toISOString(), source: source, items: items, total: total, vehicle: car, synced: Boolean(CFG.db) });
+      var entry = { id: id, at: new Date().toISOString(), source: source, items: items, total: total, vehicle: car, synced: Boolean(CFG.db) };
+      // guarda quem comprou e para onde: é o que preenche o checkout na próxima compra, mesmo sem cadastro
+      if (extra) { entry.customer = { name: p.name || '', phone: p.phone || '', email: p.email || '' }; entry.address = addr; entry.addressText = extra.addressText || ''; entry.payment = extra.payment || ''; entry.note = extra.note || ''; }
+      all.unshift(entry);
       localStorage.setItem(OKEY, JSON.stringify(all.slice(0, 60)));
     } catch (e) { /* sem histórico neste aparelho */ }
     dbInsert('orders', {
       id: id, source: source, items: items, total: total,
       customer_name: p.name || null, customer_phone: p.phone || null, customer_email: p.email || null,
-      customer_city: p.city || null, customer_cep: p.cep || null, vehicle: car || null,
+      customer_city: (addr ? addr.city + ' / ' + addr.uf : p.city) || null, customer_cep: (addr ? addr.cep : p.cep) || null, vehicle: car || null,
+      delivery_address: (extra && extra.addressText) || null, payment_method: (extra && extra.payment) || null, customer_note: (extra && extra.note) || null,
     });
     return id;
   }
@@ -124,6 +131,7 @@
       }).join('');
     }
     var total = cart.reduce(function (n, i) { return n + (i.p || 0) * i.q; }, 0);
+    $$('[data-cart-go]').forEach(function (a) { a.classList.toggle('is-disabled', !cart.length); a.setAttribute('aria-disabled', String(!cart.length)); });
     var totalEl = $('[data-cart-total]');
     if (totalEl) totalEl.textContent = brl(total);
     var co = $('[data-cart-checkout]');
@@ -312,6 +320,11 @@
     orderCode: orderCode,
     maskPhone: maskPhone,
     maskCep: maskCep,
+    cart: function () { return cart; },
+    vehicle: function () { return vehicle; },
+    setQty: function (id, q) { cart = cart.filter(function (i) { if (i.id === id) i.q = q; return i.q > 0; }); persist(); renderCart(); },
+    clearCart: function () { cart = []; persist(); renderCart(); },
+    record: recordOrder,
   };
 
   document.addEventListener('click', function (e) {

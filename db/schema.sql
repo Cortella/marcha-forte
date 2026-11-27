@@ -47,6 +47,11 @@ create table if not exists public.orders (
 alter table public.orders add column if not exists carrier text check (char_length(carrier) <= 60);
 alter table public.orders add column if not exists tracking_code text check (char_length(tracking_code) <= 60);
 
+-- Checkout: endereço de entrega, forma de pagamento preferida e observação do cliente.
+alter table public.orders add column if not exists delivery_address text check (char_length(delivery_address) <= 400);
+alter table public.orders add column if not exists payment_method text check (char_length(payment_method) <= 60);
+alter table public.orders add column if not exists customer_note text check (char_length(customer_note) <= 600);
+
 create index if not exists orders_created_at_idx on public.orders (created_at desc);
 create index if not exists orders_status_idx on public.orders (status);
 

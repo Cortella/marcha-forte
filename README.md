@@ -65,6 +65,20 @@ pedido (UUID aleatório). O link "Copiar link de acompanhamento" abre o mesmo pe
 O número curto do pedido (`#ABCD1234`) aparece na mensagem de WhatsApp, na área do cliente e na dashboard.
 A transportadora e o código de rastreio são preenchidos pelo administrador em `/admin/vendas.html`.
 
+## Checkout — `/checkout.html`
+
+O carrinho leva para uma página de checkout só com a marca (sem busca, menu ou rodapé de navegação):
+dados do cliente, entrega, veículo, forma de pagamento preferida e resumo do pedido. Ao enviar, o pedido
+é registrado e o WhatsApp abre com a mensagem pronta — não há gateway de pagamento.
+
+- **Preenchimento automático:** usa o cadastro; sem cadastro, usa os dados do último pedido feito no
+  aparelho. Quem já é conhecido vê os dados recolhidos e o endereço principal já marcado.
+- **Endereços:** até 6 por cliente, com apelido (casa, oficina…) e um principal. O CEP preenche rua,
+  bairro, cidade e UF pelo ViaCEP. Também são geridos em *Minha conta → Meus endereços*.
+- **Pagamento:** as opções vêm de `paymentOptions` em `site.config.json`
+  (padrão: Pix, Cartão de crédito, Combinar no atendimento). É só a preferência do cliente.
+- Endereço, pagamento e observação vão para a mensagem, para o banco e para a dashboard.
+
 ## Onde mexer
 
 - `scripts/lib/knowledge.mjs` — tipos de peça (texto "para que serve", sintomas, dica), montadoras e modelos.

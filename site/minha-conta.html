@@ -49,6 +49,7 @@
   <nav class="acc-tabs" role="tablist" aria-label="Seções da conta">
     <button type="button" role="tab" data-tab="pedidos" aria-selected="true">Meus pedidos</button>
     <button type="button" role="tab" data-tab="dados" aria-selected="false">Meus dados</button>
+    <button type="button" role="tab" data-tab="enderecos" aria-selected="false">Meus endereços</button>
     <button type="button" role="tab" data-tab="veiculos" aria-selected="false">Meus veículos</button>
     <button type="button" role="tab" data-tab="ajuda" aria-selected="false">Ajuda</button>
   </nav>
@@ -79,6 +80,30 @@
       <h2>Privacidade</h2>
       <p>Você pode apagar deste aparelho o cadastro, os veículos e o histórico de pedidos. Isso não cancela pedidos já enviados.</p>
       <button class="btn btn-ghost" type="button" data-acc-wipe>Apagar meus dados deste aparelho</button>
+    </div>
+  </section>
+
+  <section class="acc-panel" data-panel="enderecos" hidden>
+    <div class="acc-card">
+      <h2>Meus endereços</h2>
+      <p class="acct-intro">Salve mais de um endereço de entrega (casa, oficina, trabalho) e escolha na hora de finalizar a compra.</p>
+      <ul class="acc-cars" data-addrs></ul>
+      <button class="btn btn-dark" type="button" data-addr-new>Adicionar endereço</button>
+      <form class="acct-form acc-addr-form" data-addr-form novalidate hidden>
+        
+      <div class="addr-grid">
+        <label class="a-cep">CEP<input type="text" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9"><small data-cep-status></small></label>
+        <label class="a-street">Rua / avenida<input type="text" name="street" autocomplete="address-line1" maxlength="120"></label>
+        <label class="a-number">Número<input type="text" name="number" inputmode="numeric" maxlength="12"></label>
+        <label class="a-comp">Complemento <small>(opcional)</small><input type="text" name="comp" autocomplete="address-line2" maxlength="60" placeholder="Apto, bloco, sala"></label>
+        <label class="a-district">Bairro<input type="text" name="district" maxlength="80"></label>
+        <label class="a-city">Cidade<input type="text" name="city" autocomplete="address-level2" maxlength="80"></label>
+        <label class="a-uf">UF<input type="text" name="uf" autocomplete="address-level1" maxlength="2" placeholder="SP"></label>
+        <label class="a-label">Nome deste endereço <small>(opcional)</small><input type="text" name="label" maxlength="30" placeholder="Casa, oficina, trabalho"></label>
+      </div>
+        <p class="acct-error" data-addr-error role="alert" hidden></p>
+        <div class="adm-actions"><button class="btn btn-ghost" type="button" data-addr-cancel>Cancelar</button><button class="btn btn-primary" type="submit">Salvar endereço</button></div>
+      </form>
     </div>
   </section>
 
@@ -142,8 +167,8 @@
       <input type="text" data-cart-vehicle placeholder="Ex.: Palio 1.0 Fire 2012" autocomplete="off">
     </label>
     <div class="drawer-total"><span>Total das peças</span><strong data-cart-total>R$ 0,00</strong></div>
-    <a class="btn btn-wa btn-block" data-cart-checkout href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.200 8.200 0 0 1-4.200-1.150l-.3-.180-3 .8.8-2.900-.2-.3A8.200 8.200 0 1 1 12 20.200Zm4.500-6.100c-.250-.130-1.470-.720-1.700-.800-.230-.090-.400-.130-.560.120-.170.250-.640.800-.790.970-.140.160-.290.180-.540.060a6.700 6.700 0 0 1-3.360-2.940c-.250-.440.250-.400.720-1.350.080-.160.040-.300-.020-.430-.060-.120-.560-1.350-.770-1.850-.200-.480-.400-.420-.560-.430h-.480a.920.920 0 0 0-.660.310c-.230.250-.870.850-.870 2.070s.890 2.400 1.010 2.570c.130.160 1.750 2.670 4.240 3.740 1.580.680 2.200.740 2.990.620.480-.070 1.470-.600 1.680-1.180.200-.580.200-1.080.140-1.180-.060-.110-.220-.170-.470-.300Z"/></svg> Finalizar pedido no WhatsApp</a>
-    <p class="drawer-note">Você não paga nada agora. A gente confirma a compatibilidade, o frete e a forma de pagamento na conversa.</p>
+    <a class="btn btn-primary btn-lg btn-block" data-cart-go href="checkout.html">Finalizar compra</a>
+    <p class="drawer-note">Na próxima etapa você confere seus dados e o endereço de entrega. Nada é cobrado agora.</p>
   </div>
 </aside>
 <div class="modal-backdrop" data-acct-close hidden></div>
@@ -175,6 +200,7 @@
 <script>window.MF_CFG={"wa":"","name":"Marcha Forte","base":"","site":"https://cortella.github.io/marcha-forte","warranty":90,"db":null};</script>
 
 <script src="assets/app.js" defer></script>
+<script src="assets/address.js" defer></script>
 <script src="assets/account.js" defer></script>
 </body>
 </html>

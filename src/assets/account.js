@@ -165,7 +165,7 @@
     errEl.hidden = true;
     var old = API.profile() || {};
     API.saveProfile({ name: name, phone: API.maskPhone(phone), email: email, cep: API.maskCep(f.cep.value), city: f.city.value.trim(), offers: f.offers.checked, vehicle: old.vehicle || '', vehicles: old.vehicles || (old.vehicle ? [old.vehicle] : []) });
-    renderHead(); fillForm(); renderCars();
+    renderHead(); fillForm(); renderCars(); renderAddrs();
     notify('Dados salvos.');
   });
   $('[data-car-form]').addEventListener('submit', function (e) {
@@ -179,6 +179,53 @@
     cars.push(car);
     saveCars(cars, p.vehicle || car);
     input.value = '';
+  });
+
+  /* ---------- Endereços ---------- */
+  var ADDR = window.MF_ADDR;
+  var addrForm = $('[data-addr-form]');
+  var editingAddr = null;
+  ADDR.bind(addrForm);
+  function toggleAddrForm(open) {
+    addrForm.hidden = !open;
+    $('[data-addr-new]').hidden = open || !API.profile();
+    $('[data-addr-error]').hidden = true;
+    if (open) addrForm.querySelector('[name="cep"]').focus();
+  }
+  function renderAddrs() {
+    var p = API.profile();
+    var list = (p && p.addresses) || [];
+    $('[data-addr-new]').hidden = !p || !addrForm.hidden || list.length >= 6;
+    if (!p) { $('[data-addrs]').innerHTML = '<li class="acc-empty-text">Preencha “Meus dados” para salvar endereços.</li>'; return; }
+    $('[data-addrs]').innerHTML = list.length ? list.map(function (a) {
+      var main = p.addressId === a.id;
+      return '<li><div class="acc-addr"><strong>' + esc(a.label || 'Endereço') + '</strong>' + (main ? '<span class="acc-main">Principal</span>' : '') + '<small>' + esc(ADDR.format(a)) + '</small></div><div class="acc-car-actions">' +
+        (main ? '' : '<button type="button" data-addr-main="' + esc(a.id) + '">Tornar principal</button>') +
+        '<button type="button" data-addr-edit="' + esc(a.id) + '">Editar</button><button type="button" data-addr-del="' + esc(a.id) + '">Remover</button></div></li>';
+    }).join('') : '<li class="acc-empty-text">Nenhum endereço salvo ainda.</li>';
+  }
+  function saveAddrs(list, mainId) {
+    var p = Object.assign({}, API.profile());
+    p.addresses = list;
+    var main = list.filter(function (a) { return a.id === mainId; })[0] || list[0] || null;
+    p.addressId = main ? main.id : '';
+    if (main) { p.cep = main.cep; p.city = main.city + ' / ' + main.uf; }
+    API.saveProfile(p);
+    renderAddrs(); fillForm();
+  }
+  addrForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var read = ADDR.read(addrForm);
+    var errEl = $('[data-addr-error]');
+    if (read.error) { errEl.textContent = read.error; errEl.hidden = false; read.field.focus(); return; }
+    var p = API.profile();
+    var list = (p.addresses || []).slice();
+    var a = read.value;
+    if (editingAddr) { list = list.map(function (x) { return x.id === editingAddr ? Object.assign({}, a, { id: x.id, label: a.label || x.label }) : x; }); }
+    else { a.id = ADDR.newId(); a.label = a.label || (list.length ? 'Endereço ' + (list.length + 1) : 'Principal'); list.push(a); }
+    addrForm.hidden = true;
+    saveAddrs(list, p.addressId || (editingAddr ? '' : a.id));
+    notify('Endereço salvo.');
   });
 
   /* ---------- Ações ---------- */
@@ -222,6 +269,15 @@
     var cars = p ? (p.vehicles || (p.vehicle ? [p.vehicle] : [])).slice() : [];
     if (t.closest('[data-car-main]')) { saveCars(cars, cars[Number(t.closest('[data-car-main]').getAttribute('data-car-main'))]); return; }
     if (t.closest('[data-car-del]')) { cars.splice(Number(t.closest('[data-car-del]').getAttribute('data-car-del')), 1); saveCars(cars, p.vehicle); return; }
+    if (t.closest('[data-addr-new]')) { editingAddr = null; ADDR.fill(addrForm, {}); toggleAddrForm(true); return; }
+    if (t.closest('[data-addr-cancel]')) { toggleAddrForm(false); return; }
+    var list = p ? (p.addresses || []).slice() : [];
+    var aEdit = t.closest('[data-addr-edit]');
+    if (aEdit) { editingAddr = aEdit.getAttribute('data-addr-edit'); ADDR.fill(addrForm, list.filter(function (a) { return a.id === editingAddr; })[0]); toggleAddrForm(true); return; }
+    var aMain = t.closest('[data-addr-main]');
+    if (aMain) { saveAddrs(list, aMain.getAttribute('data-addr-main')); return; }
+    var aDel = t.closest('[data-addr-del]');
+    if (aDel) { saveAddrs(list.filter(function (a) { return a.id !== aDel.getAttribute('data-addr-del'); }), p.addressId); return; }
     var wipe = t.closest('[data-acc-wipe]');
     if (wipe) {
       if (!wipe.hasAttribute('data-confirm')) { wipe.setAttribute('data-confirm', ''); wipe.textContent = 'Clique de novo para confirmar'; return; }
@@ -233,7 +289,7 @@
   });
 
   $('[data-acc-refresh]').hidden = !CFG.db;
-  renderHead(); fillForm(); renderCars(); renderOrders(); fetchStatus();
+  renderHead(); fillForm(); renderCars(); renderAddrs(); renderOrders(); fetchStatus();
   var initial = location.hash.replace('#', '');
-  if (['pedidos', 'dados', 'veiculos', 'ajuda'].indexOf(initial) >= 0) showTab(initial);
+  if (['pedidos', 'dados', 'enderecos', 'veiculos', 'ajuda'].indexOf(initial) >= 0) showTab(initial);
 })();
