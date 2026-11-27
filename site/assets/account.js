@@ -105,7 +105,7 @@
 
     $('[data-orders]').innerHTML = orders.length
       ? orders.map(function (o) { return orderHtml(o, remote[o.id], false); }).join('')
-      : '<div class="acc-empty"><h2>Você ainda não fez pedidos neste aparelho</h2><p>Os pedidos enviados pelo site aparecem aqui, com o andamento e o código de rastreio.</p><a class="btn btn-primary btn-lg" href="index.html#catalogo">Ver o catálogo</a></div>';
+      : '<div class="acc-empty"><h2>Você ainda não fez pedidos</h2><p>Os pedidos enviados pelo site aparecem aqui, com o andamento e o código de rastreio.</p><a class="btn btn-primary btn-lg" href="index.html#catalogo">Ver o catálogo</a></div>';
     if (linked && known) { var el = $('[data-order="' + linked + '"]'); if (el) el.classList.add('is-linked'); }
   }
 
